@@ -24,7 +24,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name="com.example.pokemonapp.PokemonDetailsScreen" />
+        <activity android:name=".PokemonDetailsScreen" />
     </application>
 
 </manifest>

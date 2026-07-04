@@ -1,11 +1,11 @@
-package com.example.pokemonapp.viewmodel
+package com.davidbrazuna.pokemonapp.viewmodel
 
 import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import com.example.pokemonapp.pojo.PokemonDetailResponseData
-import com.example.pokemonapp.retrofit.RetrofitInstance
+import com.davidbrazuna.pokemonapp.pojo.PokemonDetailResponseData
+import com.davidbrazuna.pokemonapp.retrofit.RetrofitInstance
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response

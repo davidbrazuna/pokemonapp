@@ -1,10 +1,10 @@
-package com.example.pokemonapp.viewmodel
+package com.davidbrazuna.pokemonapp.viewmodel
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.pokemonapp.retrofit.RetrofitInstance
+import com.davidbrazuna.pokemonapp.retrofit.RetrofitInstance
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.launch

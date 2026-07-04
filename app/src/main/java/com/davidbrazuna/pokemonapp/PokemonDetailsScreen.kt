@@ -1,4 +1,4 @@
-package com.example.pokemonapp
+package com.davidbrazuna.pokemonapp
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
@@ -6,10 +6,10 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
-import com.example.pokemonapp.MainActivity.Companion.POKEMON_NAME
-import com.example.pokemonapp.adapters.AbilitiesAdapter
-import com.example.pokemonapp.databinding.PokemonDetailsBinding
-import com.example.pokemonapp.viewmodel.PokemonDetailViewModel
+import com.davidbrazuna.pokemonapp.MainActivity.Companion.POKEMON_NAME
+import com.davidbrazuna.pokemonapp.adapters.AbilitiesAdapter
+import com.davidbrazuna.pokemonapp.databinding.PokemonDetailsBinding
+import com.davidbrazuna.pokemonapp.viewmodel.PokemonDetailViewModel
 
 class PokemonDetailsScreen : AppCompatActivity() {
 

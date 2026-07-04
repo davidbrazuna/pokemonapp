@@ -1,7 +1,7 @@
-package com.example.pokemonapp.retrofit
+package com.davidbrazuna.pokemonapp.retrofit
 
-import com.example.pokemonapp.pojo.PokemonDetailResponseData
-import com.example.pokemonapp.pojo.PokemonList
+import com.davidbrazuna.pokemonapp.pojo.PokemonDetailResponseData
+import com.davidbrazuna.pokemonapp.pojo.PokemonList
 import retrofit2.Call
 import retrofit2.http.GET
 import retrofit2.http.Path
