@@ -1,4 +1,4 @@
-package com.example.pokemonapp
+package com.davidbrazuna.pokemonapp
 
 import android.content.Intent
 import android.os.Bundle
@@ -7,9 +7,9 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.pokemonapp.adapters.PokemonListAdapter
-import com.example.pokemonapp.databinding.ActivityMainBinding
-import com.example.pokemonapp.viewmodel.PokemonListViewModel
+import com.davidbrazuna.pokemonapp.adapters.PokemonListAdapter
+import com.davidbrazuna.pokemonapp.databinding.ActivityMainBinding
+import com.davidbrazuna.pokemonapp.viewmodel.PokemonListViewModel
 
 class MainActivity : AppCompatActivity() {
 

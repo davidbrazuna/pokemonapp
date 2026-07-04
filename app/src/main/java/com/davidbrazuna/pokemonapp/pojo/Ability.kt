@@ -1,4 +1,4 @@
-package com.example.pokemonapp.pojo
+package com.davidbrazuna.pokemonapp.pojo
 
 data class Ability(
     val ability: AbilityItem,

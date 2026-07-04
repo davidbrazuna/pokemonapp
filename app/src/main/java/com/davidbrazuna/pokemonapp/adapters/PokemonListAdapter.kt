@@ -1,11 +1,11 @@
-package com.example.pokemonapp.adapters
+package com.davidbrazuna.pokemonapp.adapters
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
-import com.example.pokemonapp.databinding.PokemonListItemBinding
-import com.example.pokemonapp.viewmodel.PokemonWithImage
+import com.davidbrazuna.pokemonapp.databinding.PokemonListItemBinding
+import com.davidbrazuna.pokemonapp.viewmodel.PokemonWithImage
 
 
 class PokemonListAdapter : RecyclerView.Adapter<PokemonListAdapter.PokemonViewHolder> (){

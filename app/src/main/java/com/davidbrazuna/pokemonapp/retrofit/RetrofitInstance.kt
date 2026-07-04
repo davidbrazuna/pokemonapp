@@ -1,4 +1,4 @@
-package com.example.pokemonapp.retrofit
+package com.davidbrazuna.pokemonapp.retrofit
 
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory

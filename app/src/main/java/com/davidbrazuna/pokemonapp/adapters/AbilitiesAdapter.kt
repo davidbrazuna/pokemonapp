@@ -1,11 +1,11 @@
-package com.example.pokemonapp.adapters
+package com.davidbrazuna.pokemonapp.adapters
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import com.example.pokemonapp.databinding.AbilityItemBinding
-import com.example.pokemonapp.pojo.Ability
-import com.example.pokemonapp.pojo.AbilityItem
+import com.davidbrazuna.pokemonapp.databinding.AbilityItemBinding
+import com.davidbrazuna.pokemonapp.pojo.Ability
+import com.davidbrazuna.pokemonapp.pojo.AbilityItem
 
 class AbilitiesAdapter : RecyclerView.Adapter<AbilitiesAdapter.AbilitiesViewHolder> (){
 
