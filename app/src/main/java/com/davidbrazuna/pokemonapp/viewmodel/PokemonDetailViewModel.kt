@@ -1,42 +1,57 @@
 package com.davidbrazuna.pokemonapp.viewmodel
 
-import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
-import com.davidbrazuna.pokemonapp.pojo.PokemonDetailResponseData
+import androidx.lifecycle.viewModelScope
+import com.davidbrazuna.pokemonapp.data.PokemonRepository
+import com.davidbrazuna.pokemonapp.model.PokemonDetailResponseData
 import com.davidbrazuna.pokemonapp.retrofit.RetrofitInstance
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
+import kotlinx.coroutines.launch
 
-class PokemonDetailViewModel : ViewModel() {
+// Constructor takes only SavedStateHandle so the default ViewModel factory can
+// build it and auto-populate the handle from the Intent extras.
+class PokemonDetailViewModel(
+    savedStateHandle: SavedStateHandle
+) : ViewModel() {
+
+    companion object {
+        // Key used to pass the Pokemon name through the Intent extras / SavedStateHandle.
+        const val KEY_POKEMON_NAME = "POKEMON_NAME"
+    }
+
+    private val repository = PokemonRepository(RetrofitInstance.api)
+
+    private val pokemonName: String = savedStateHandle[KEY_POKEMON_NAME]
+        ?: error("PokemonDetailViewModel requires a '$KEY_POKEMON_NAME' argument")
 
     private val pokemonDetailsLiveData = MutableLiveData<PokemonDetailResponseData>()
+    private val errorLiveData = MutableLiveData<String?>()
 
-    fun getPokemonDetails(name: String){
+    init {
+        loadDetails()
+    }
 
-        RetrofitInstance.api.getPokemonDetails(name).enqueue(object : Callback<PokemonDetailResponseData> {
-            override fun onResponse(
-                call: Call<PokemonDetailResponseData>,
-                response: Response<PokemonDetailResponseData>
-            ) {
-                response.body()?.let {
-                    pokemonDetailsLiveData.postValue(it)
+    private fun loadDetails() {
+        viewModelScope.launch {
+            repository.getPokemonDetails(pokemonName)
+                .onSuccess {
+                    pokemonDetailsLiveData.value = it
+                    errorLiveData.value = null
                 }
-            }
-
-            override fun onFailure(call: Call<PokemonDetailResponseData>, t: Throwable) {
-                Log.d("PokemonDetailsViewModel", t.message.toString())
-            }
-
-        })
-
-
-
-    }
-    fun observePokemonDetailsLiveData() : LiveData<PokemonDetailResponseData> {
-        return pokemonDetailsLiveData
+                .onFailure { throwable ->
+                    errorLiveData.value = throwable.message ?: "Unknown error"
+                }
+        }
     }
 
+    fun retry() {
+        loadDetails()
+    }
+
+    fun observePokemonDetailsLiveData(): LiveData<PokemonDetailResponseData> =
+        pokemonDetailsLiveData
+
+    fun observeErrorLiveData(): LiveData<String?> = errorLiveData
 }

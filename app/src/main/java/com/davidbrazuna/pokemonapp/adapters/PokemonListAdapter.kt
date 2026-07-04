@@ -5,39 +5,39 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.davidbrazuna.pokemonapp.databinding.PokemonListItemBinding
-import com.davidbrazuna.pokemonapp.viewmodel.PokemonWithImage
+import com.davidbrazuna.pokemonapp.model.PokemonWithImage
 
+class PokemonListAdapter : RecyclerView.Adapter<PokemonListAdapter.PokemonViewHolder>() {
 
-class PokemonListAdapter : RecyclerView.Adapter<PokemonListAdapter.PokemonViewHolder> (){
-
-    private var pokemonList = ArrayList<PokemonWithImage>()
-    var onItemClick : ((PokemonWithImage) -> Unit)? = null
+    private var pokemonList = listOf<PokemonWithImage>()
+    var onItemClick: ((PokemonWithImage) -> Unit)? = null
 
     fun setPokemonList(pokemonList: List<PokemonWithImage>) {
-        this.pokemonList = pokemonList as ArrayList<PokemonWithImage>
+        this.pokemonList = pokemonList
         notifyDataSetChanged()
     }
 
-    inner class PokemonViewHolder(val binding: PokemonListItemBinding): RecyclerView.ViewHolder(binding.root)
+    inner class PokemonViewHolder(val binding: PokemonListItemBinding) :
+        RecyclerView.ViewHolder(binding.root)
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PokemonViewHolder {
         return PokemonViewHolder(
-            PokemonListItemBinding.inflate(LayoutInflater.from(parent.context))
+            PokemonListItemBinding.inflate(LayoutInflater.from(parent.context), parent, false)
         )
     }
 
     override fun getItemCount() = pokemonList.size
 
     override fun onBindViewHolder(holder: PokemonViewHolder, position: Int) {
+        val item = pokemonList[position]
         Glide.with(holder.itemView)
-            .load(pokemonList[position].imageUrl)
+            .load(item.imageUrl)
             .into(holder.binding.imgPokemon)
 
-        holder.binding.pokemonName.text = pokemonList[position].name
+        holder.binding.pokemonName.text = item.name
 
         holder.itemView.setOnClickListener {
-            onItemClick?.invoke(pokemonList[position])
+            onItemClick?.invoke(item)
         }
-
     }
 }
