@@ -16,7 +16,9 @@ import kotlinx.coroutines.launch
 sealed interface DetailUiState {
     data object Loading : DetailUiState
     data class Success(val pokemon: PokemonDetailResponseData) : DetailUiState
-    data class Error(val message: String) : DetailUiState
+    // message may be null (e.g. no exception text); the UI shows a localized
+    // generic string in that case rather than an English literal from here.
+    data class Error(val message: String?) : DetailUiState
 }
 
 class PokemonDetailViewModel(
@@ -46,7 +48,7 @@ class PokemonDetailViewModel(
             repository.getPokemonDetails(pokemonName)
                 .onSuccess { _uiState.value = DetailUiState.Success(it) }
                 .onFailure { throwable ->
-                    _uiState.value = DetailUiState.Error(throwable.message ?: "Unknown error")
+                    _uiState.value = DetailUiState.Error(throwable.message)
                 }
         }
     }
