@@ -1,18 +1,16 @@
 package com.davidbrazuna.pokemonapp.retrofit
 
-import com.davidbrazuna.pokemonapp.pojo.PokemonDetailResponseData
-import com.davidbrazuna.pokemonapp.pojo.PokemonList
-import retrofit2.Call
+import com.davidbrazuna.pokemonapp.model.PokemonDetailResponseData
+import com.davidbrazuna.pokemonapp.model.PokemonList
 import retrofit2.http.GET
 import retrofit2.http.Path
 import retrofit2.http.Url
 
 interface PokemonApi {
 
-     @GET
-     fun getPokemonList(@Url url: String): Call<PokemonList>
+    @GET
+    suspend fun getPokemonList(@Url url: String): PokemonList
 
-     @GET("pokemon/{name}")
-     fun getPokemonDetails(@Path("name") name: String): Call<PokemonDetailResponseData>
-
+    @GET("pokemon/{name}")
+    suspend fun getPokemonDetails(@Path("name") name: String): PokemonDetailResponseData
 }

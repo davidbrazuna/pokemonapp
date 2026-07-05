@@ -1,27 +1,36 @@
 package com.davidbrazuna.pokemonapp
 
 import android.os.Bundle
+import android.widget.Toast
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
-import com.davidbrazuna.pokemonapp.MainActivity.Companion.POKEMON_NAME
 import com.davidbrazuna.pokemonapp.adapters.AbilitiesAdapter
 import com.davidbrazuna.pokemonapp.databinding.PokemonDetailsBinding
+import com.davidbrazuna.pokemonapp.util.observeErrorToast
 import com.davidbrazuna.pokemonapp.viewmodel.PokemonDetailViewModel
 
 class PokemonDetailsScreen : AppCompatActivity() {
 
     private lateinit var binding: PokemonDetailsBinding
-    private lateinit var pokemonDetailsMvvm: PokemonDetailViewModel
     private lateinit var abilitiesAdapter: AbilitiesAdapter
 
-    var name: String? = ""
-
+    // The Intent extra (KEY_POKEMON_NAME) is read from SavedStateHandle inside the ViewModel.
+    private val viewModel: PokemonDetailViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Guard against a future call site (e.g. a deep link) forgetting the
+        // extra: fail gracefully here instead of crashing in the ViewModel
+        // constructor's error(...) call. This check runs before `viewModel`
+        // is ever touched, so the ViewModel is never actually created.
+        if (intent.getStringExtra(PokemonDetailViewModel.KEY_POKEMON_NAME) == null) {
+            Toast.makeText(this, "Missing Pokemon name", Toast.LENGTH_SHORT).show()
+            finish()
+            return
+        }
 
         binding = PokemonDetailsBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -29,12 +38,8 @@ class PokemonDetailsScreen : AppCompatActivity() {
         abilitiesAdapter = AbilitiesAdapter()
         prepareAbilitiesRecyclerView()
 
-        pokemonDetailsMvvm = ViewModelProvider(this)[PokemonDetailViewModel::class.java]
-
-        getPokemonDetailsFromIntent()
-
-        pokemonDetailsMvvm.getPokemonDetails(name!!)
-        observePokemonDetailsLiveData()
+        observeDetails()
+        observeErrorToast(viewModel.observeErrorLiveData())
     }
 
     private fun prepareAbilitiesRecyclerView() {
@@ -44,24 +49,19 @@ class PokemonDetailsScreen : AppCompatActivity() {
         }
     }
 
-    private fun observePokemonDetailsLiveData() {
-        pokemonDetailsMvvm.observePokemonDetailsLiveData().observe(this, Observer {
+    private fun observeDetails() {
+        viewModel.observePokemonDetailsLiveData().observe(this) { details ->
             Glide.with(this)
-                .load(it.sprites.other.home.front_default)
+                .load(details.sprites.other?.home?.frontDefault)
                 .into(binding.imgPokemon)
 
-            binding.pokemonName.text = "name: ${it.name}"
-            binding.pokemonId.text = "id: ${it.id}"
-            binding.pokemonHeight.text = "height: ${it.height.toString()}"
-            binding.pokemonWeight.text = "weight: ${it.weight.toString()}"
-            binding.pokemonBaseExperience.text = "base experience: ${it.base_experience.toString()}"
-            abilitiesAdapter.setAbilitiesList(it.abilities)
-        })
-    }
-
-    private fun getPokemonDetailsFromIntent() {
-        val intent = intent
-        name = intent.getStringExtra(POKEMON_NAME)
-
+            binding.pokemonName.text = "name: ${details.name}"
+            binding.pokemonId.text = "id: ${details.id}"
+            binding.pokemonHeight.text = "height: ${details.height}"
+            binding.pokemonWeight.text = "weight: ${details.weight}"
+            binding.pokemonBaseExperience.text =
+                "base experience: ${details.baseExperience ?: "-"}"
+            abilitiesAdapter.setAbilitiesList(details.abilities)
+        }
     }
 }

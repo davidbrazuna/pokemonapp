@@ -4,63 +4,72 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.davidbrazuna.pokemonapp.data.PokemonRepository
+import com.davidbrazuna.pokemonapp.model.PokemonWithImage
 import com.davidbrazuna.pokemonapp.retrofit.RetrofitInstance
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
+import com.davidbrazuna.pokemonapp.util.Event
 import kotlinx.coroutines.launch
-import retrofit2.awaitResponse
 
-class PokemonListViewModel : ViewModel() {
+class PokemonListViewModel(
+    private val repository: PokemonRepository = PokemonRepository(RetrofitInstance.api)
+) : ViewModel() {
 
     private val pokemonListLiveData = MutableLiveData<List<PokemonWithImage>>()
+    private val errorLiveData = MutableLiveData<Event<String>>()
+
     private var nextPageUrl: String? = null
     private var previousPageUrl: String? = null
+    private var lastRequestedUrl: String = INITIAL_URL
+    private var isLoading = false
 
     companion object {
-        private const val INITIAL_URL = "https://pokeapi.co/api/v2/pokemon/?offset=0&limit=20"
+        // Relative to Retrofit's baseUrl (see RetrofitInstance.BASE_URL) so the
+        // host isn't duplicated across files.
+        private const val INITIAL_URL = "pokemon?offset=0&limit=20"
     }
 
     init {
-        getPokemonList(INITIAL_URL)
+        loadPokemonList(INITIAL_URL)
     }
 
-    fun getPokemonList(url: String = INITIAL_URL) {
+    private fun loadPokemonList(url: String) {
+        // Guards against overlapping requests (e.g. fast fling triggering
+        // onScrolled multiple times) racing and corrupting pagination state.
+        if (isLoading) return
+        isLoading = true
+        lastRequestedUrl = url
+
         viewModelScope.launch {
-            val response = RetrofitInstance.api.getPokemonList(url).awaitResponse()
-            if (response.isSuccessful) {
-                val pokemonListResponse = response.body()
-                nextPageUrl = pokemonListResponse?.next
-                previousPageUrl = pokemonListResponse?.previous
-                val pokemonDetails = pokemonListResponse?.results?.map { pokemon ->
-                    async {
-                        val detailResponse = RetrofitInstance.api.getPokemonDetails(pokemon.name).awaitResponse()
-                        if (detailResponse.isSuccessful) {
-                            val imageUrl = detailResponse.body()?.sprites?.front_default ?: ""
-                            PokemonWithImage(pokemon.name, imageUrl)
-                        } else null
+            try {
+                repository.getPokemonPage(url)
+                    .onSuccess { page ->
+                        nextPageUrl = page.nextUrl
+                        previousPageUrl = page.previousUrl
+                        pokemonListLiveData.value = page.pokemons
                     }
-                }?.awaitAll()?.filterNotNull()
-                pokemonListLiveData.postValue(pokemonDetails!!)
+                    .onFailure { throwable ->
+                        errorLiveData.value = Event(throwable.message ?: "Unknown error")
+                    }
+            } finally {
+                isLoading = false
             }
         }
     }
 
     fun getNextPage() {
-        nextPageUrl?.let {
-            getPokemonList(it)
-        }
+        nextPageUrl?.let { loadPokemonList(it) }
     }
 
     fun getPreviousPage() {
-        previousPageUrl?.let {
-            getPokemonList(it)
-        }
+        previousPageUrl?.let { loadPokemonList(it) }
     }
 
-    fun observePokemonListLiveData(): LiveData<List<PokemonWithImage>> {
-        return pokemonListLiveData
+    // Re-triggers the request that failed, not necessarily the first page.
+    fun retry() {
+        loadPokemonList(lastRequestedUrl)
     }
+
+    fun observePokemonListLiveData(): LiveData<List<PokemonWithImage>> = pokemonListLiveData
+
+    fun observeErrorLiveData(): LiveData<Event<String>> = errorLiveData
 }
-
-data class PokemonWithImage(val name: String, val imageUrl: String)
-
