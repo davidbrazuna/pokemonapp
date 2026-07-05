@@ -33,8 +33,7 @@ android {
     }
 
     buildFeatures {
-        // viewBinding stays on: the detail screen is still View-based this branch.
-        viewBinding = true
+        // No View-based screens remain — the app is Compose end to end.
         buildConfig = true
         compose = true
     }
@@ -48,12 +47,8 @@ kotlin {
 
 dependencies {
     implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.appcompat)
     implementation(libs.material)
-    implementation(libs.androidx.activity)
-    implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
-    implementation(libs.androidx.lifecycle.livedata.ktx)
     implementation(libs.retrofit)
     implementation(libs.retrofit.converter.kotlinx.serialization)
     implementation(libs.kotlinx.serialization.json)
@@ -61,8 +56,6 @@ dependencies {
     implementation(libs.okhttp)
     // Interceptor is added only when BuildConfig.DEBUG is true (see RetrofitInstance)
     implementation(libs.okhttp.logging.interceptor)
-    implementation(libs.glide)
-
     // Compose — the BOM aligns all Compose artifact versions.
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
@@ -71,6 +64,8 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.androidx.navigation.compose)
     debugImplementation(libs.androidx.compose.ui.tooling)
 
     // Paging 3 for the list (runtime + Compose integration).

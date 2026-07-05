@@ -1,51 +1,54 @@
 package com.davidbrazuna.pokemonapp.viewmodel
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.davidbrazuna.pokemonapp.data.PokemonRepository
 import com.davidbrazuna.pokemonapp.model.PokemonDetailResponseData
 import com.davidbrazuna.pokemonapp.retrofit.RetrofitInstance
-import com.davidbrazuna.pokemonapp.util.Event
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-// Constructor takes only SavedStateHandle so the default ViewModel factory can
-// build it and auto-populate the handle from the Intent extras.
+// UI state for the detail screen. Compose collects this as a single source of truth
+// instead of separate LiveData + one-shot error Event.
+sealed interface DetailUiState {
+    data object Loading : DetailUiState
+    data class Success(val pokemon: PokemonDetailResponseData) : DetailUiState
+    // message may be null (e.g. no exception text); the UI shows a localized
+    // generic string in that case rather than an English literal from here.
+    data class Error(val message: String?) : DetailUiState
+}
+
 class PokemonDetailViewModel(
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
-    companion object {
-        // Key used to pass the Pokemon name through the Intent extras / SavedStateHandle.
-        const val KEY_POKEMON_NAME = "POKEMON_NAME"
-    }
-
-    // Instantiated directly (not received via constructor, unlike PokemonListViewModel)
-    // because the default factory only auto-injects a lone SavedStateHandle parameter.
-    // Revisit once Hilt/@HiltViewModel is introduced.
+    // Instantiated directly (not via constructor) because the default factory only
+    // auto-injects a lone SavedStateHandle. Revisit once Hilt/@HiltViewModel lands.
     private val repository = PokemonRepository(RetrofitInstance.api)
 
-    // PokemonDetailsScreen checks the extra before this ViewModel is created, so this
-    // should never actually throw today; kept as a fail-fast guard for future call
-    // sites (e.g. a deep link) that might forget to pass the argument.
-    private val pokemonName: String = savedStateHandle[KEY_POKEMON_NAME]
-        ?: error("PokemonDetailViewModel requires a '$KEY_POKEMON_NAME' argument")
+    // Populated by the type-safe Route.PokemonDetail(name) argument. The NavHost
+    // guarantees the argument is present, so this should never throw; kept as a
+    // fail-fast guard for a future call site (e.g. a deep link) that forgets it.
+    private val pokemonName: String = savedStateHandle["name"]
+        ?: error("PokemonDetailViewModel requires a 'name' argument")
 
-    private val pokemonDetailsLiveData = MutableLiveData<PokemonDetailResponseData>()
-    private val errorLiveData = MutableLiveData<Event<String>>()
+    private val _uiState = MutableStateFlow<DetailUiState>(DetailUiState.Loading)
+    val uiState: StateFlow<DetailUiState> = _uiState.asStateFlow()
 
     init {
         loadDetails()
     }
 
     private fun loadDetails() {
+        _uiState.value = DetailUiState.Loading
         viewModelScope.launch {
             repository.getPokemonDetails(pokemonName)
-                .onSuccess { pokemonDetailsLiveData.value = it }
+                .onSuccess { _uiState.value = DetailUiState.Success(it) }
                 .onFailure { throwable ->
-                    errorLiveData.value = Event(throwable.message ?: "Unknown error")
+                    _uiState.value = DetailUiState.Error(throwable.message)
                 }
         }
     }
@@ -53,9 +56,4 @@ class PokemonDetailViewModel(
     fun retry() {
         loadDetails()
     }
-
-    fun observePokemonDetailsLiveData(): LiveData<PokemonDetailResponseData> =
-        pokemonDetailsLiveData
-
-    fun observeErrorLiveData(): LiveData<Event<String>> = errorLiveData
 }
