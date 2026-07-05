@@ -5,8 +5,6 @@ import androidx.paging.PagingState
 import com.davidbrazuna.pokemonapp.model.PokemonWithImage
 import com.davidbrazuna.pokemonapp.retrofit.PokemonApi
 import kotlinx.coroutines.CancellationException
-import retrofit2.HttpException
-import java.io.IOException
 
 // Pages the PokeAPI list endpoint. The key is the offset; loadSize is the limit.
 // The sprite URL is derived from the id already present in each list item's url,
@@ -33,9 +31,11 @@ class PokemonPagingSource(
             // Leaving the screen cancels the load; let cancellation propagate
             // normally instead of surfacing it as a load error.
             throw e
-        } catch (e: IOException) {
-            LoadResult.Error(e)
-        } catch (e: HttpException) {
+        } catch (e: Exception) {
+            // Covers IOException/HttpException as well as serialization failures
+            // (e.g. a captive portal returning a 200 with an HTML body instead of
+            // JSON) — Paging does not convert uncaught exceptions to LoadState.Error
+            // on its own, so anything unhandled here crashes the app.
             LoadResult.Error(e)
         }
     }

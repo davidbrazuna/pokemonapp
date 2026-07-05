@@ -19,10 +19,13 @@ object RetrofitInstance {
     // (shared connection pool and debug logging) instead of creating a second one.
     val okHttpClient: OkHttpClient by lazy {
         val builder = OkHttpClient.Builder()
-        // Log full request/response bodies in debug builds only
+        // Log request/response lines in debug builds only. BASIC (not BODY): this
+        // client is shared with Coil for image fetches, and BODY would buffer and
+        // try to print every sprite PNG in full, flooding logcat and drowning out
+        // the JSON logs this exists for.
         if (BuildConfig.DEBUG) {
             val logging = HttpLoggingInterceptor().apply {
-                level = HttpLoggingInterceptor.Level.BODY
+                level = HttpLoggingInterceptor.Level.BASIC
             }
             builder.addInterceptor(logging)
         }

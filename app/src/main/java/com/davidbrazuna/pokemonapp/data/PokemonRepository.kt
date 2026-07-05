@@ -16,8 +16,13 @@ class PokemonRepository(
 
     // Paging 3 owns loading/append/retry state; the sprite is derived from the id
     // inside PokemonPagingSource, so no per-Pokemon detail call is made.
+    //
+    // initialLoadSize must match pageSize: PagingConfig defaults it to 3x pageSize,
+    // but PokemonPagingSource derives prevKey/nextKey from params.loadSize, so a
+    // mismatched initial load leaves a gap/overlap between the refresh page and
+    // subsequent prepend/append pages (and duplicate keys in the list).
     fun getPokemonPager(): Flow<PagingData<PokemonWithImage>> =
-        Pager(PagingConfig(pageSize = PAGE_SIZE)) {
+        Pager(PagingConfig(pageSize = PAGE_SIZE, initialLoadSize = PAGE_SIZE)) {
             PokemonPagingSource(api)
         }.flow
 
