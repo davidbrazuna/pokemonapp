@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.kotlin.compose)
 }
 
 android {
@@ -32,8 +33,10 @@ android {
     }
 
     buildFeatures {
+        // viewBinding stays on: the detail screen is still View-based this branch.
         viewBinding = true
         buildConfig = true
+        compose = true
     }
 }
 
@@ -59,6 +62,25 @@ dependencies {
     // Interceptor is added only when BuildConfig.DEBUG is true (see RetrofitInstance)
     implementation(libs.okhttp.logging.interceptor)
     implementation(libs.glide)
+
+    // Compose — the BOM aligns all Compose artifact versions.
+    implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.compose.ui)
+    implementation(libs.androidx.compose.ui.tooling.preview)
+    implementation(libs.androidx.compose.foundation)
+    implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    debugImplementation(libs.androidx.compose.ui.tooling)
+
+    // Paging 3 for the list (runtime + Compose integration).
+    implementation(libs.androidx.paging.runtime)
+    implementation(libs.androidx.paging.compose)
+
+    // Coil 3 for image loading in Compose; coil-network-okhttp reuses our OkHttp.
+    implementation(libs.coil.compose)
+    implementation(libs.coil.network.okhttp)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
