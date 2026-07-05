@@ -15,7 +15,9 @@ object RetrofitInstance {
     // ignoreUnknownKeys lets the PokeAPI return extra fields we don't model
     private val json = Json { ignoreUnknownKeys = true }
 
-    private val okHttpClient: OkHttpClient by lazy {
+    // Public so Coil's OkHttpNetworkFetcherFactory can reuse the same client
+    // (shared connection pool and debug logging) instead of creating a second one.
+    val okHttpClient: OkHttpClient by lazy {
         val builder = OkHttpClient.Builder()
         // Log full request/response bodies in debug builds only
         if (BuildConfig.DEBUG) {

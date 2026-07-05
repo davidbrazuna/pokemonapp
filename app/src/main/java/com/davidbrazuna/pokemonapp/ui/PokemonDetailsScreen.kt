@@ -1,4 +1,4 @@
-package com.davidbrazuna.pokemonapp
+package com.davidbrazuna.pokemonapp.ui
 
 import android.os.Bundle
 import android.widget.Toast
