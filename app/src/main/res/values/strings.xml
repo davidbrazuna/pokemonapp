@@ -1,3 +1,16 @@
 <resources>
     <string name="app_name">PokemonApp</string>
+
+    <!-- Detail screen -->
+    <string name="detail_id">id: %1$d</string>
+    <string name="detail_name">name: %1$s</string>
+    <string name="detail_height">height: %1$d</string>
+    <string name="detail_weight">weight: %1$d</string>
+    <string name="detail_base_experience">base experience: %1$s</string>
+    <string name="detail_base_experience_unknown">-</string>
+    <string name="detail_abilities_title">Abilities:</string>
+
+    <!-- Shared -->
+    <string name="retry">Retry</string>
+    <string name="error_generic">Something went wrong</string>
 </resources>
