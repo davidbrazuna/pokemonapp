@@ -8,6 +8,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
 import com.davidbrazuna.pokemonapp.adapters.AbilitiesAdapter
 import com.davidbrazuna.pokemonapp.databinding.PokemonDetailsBinding
+import com.davidbrazuna.pokemonapp.util.observeErrorToast
 import com.davidbrazuna.pokemonapp.viewmodel.PokemonDetailViewModel
 
 class PokemonDetailsScreen : AppCompatActivity() {
@@ -21,6 +22,16 @@ class PokemonDetailsScreen : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // Guard against a future call site (e.g. a deep link) forgetting the
+        // extra: fail gracefully here instead of crashing in the ViewModel
+        // constructor's error(...) call. This check runs before `viewModel`
+        // is ever touched, so the ViewModel is never actually created.
+        if (intent.getStringExtra(PokemonDetailViewModel.KEY_POKEMON_NAME) == null) {
+            Toast.makeText(this, "Missing Pokemon name", Toast.LENGTH_SHORT).show()
+            finish()
+            return
+        }
+
         binding = PokemonDetailsBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -28,7 +39,7 @@ class PokemonDetailsScreen : AppCompatActivity() {
         prepareAbilitiesRecyclerView()
 
         observeDetails()
-        observeError()
+        observeErrorToast(viewModel.observeErrorLiveData())
     }
 
     private fun prepareAbilitiesRecyclerView() {
@@ -48,16 +59,9 @@ class PokemonDetailsScreen : AppCompatActivity() {
             binding.pokemonId.text = "id: ${details.id}"
             binding.pokemonHeight.text = "height: ${details.height}"
             binding.pokemonWeight.text = "weight: ${details.weight}"
-            binding.pokemonBaseExperience.text = "base experience: ${details.baseExperience}"
+            binding.pokemonBaseExperience.text =
+                "base experience: ${details.baseExperience ?: "-"}"
             abilitiesAdapter.setAbilitiesList(details.abilities)
-        }
-    }
-
-    private fun observeError() {
-        viewModel.observeErrorLiveData().observe(this) { error ->
-            if (error != null) {
-                Toast.makeText(this, error, Toast.LENGTH_SHORT).show()
-            }
         }
     }
 }

@@ -10,7 +10,7 @@ data class PokemonDetailResponseData(
     val height: Int,
     val weight: Int,
     @SerialName("base_experience")
-    val baseExperience: Int,
+    val baseExperience: Int? = null,
     val abilities: List<Ability> = emptyList(),
     val sprites: Sprites
 )

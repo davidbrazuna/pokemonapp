@@ -2,13 +2,13 @@ package com.davidbrazuna.pokemonapp
 
 import android.content.Intent
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.davidbrazuna.pokemonapp.adapters.PokemonListAdapter
 import com.davidbrazuna.pokemonapp.databinding.ActivityMainBinding
+import com.davidbrazuna.pokemonapp.util.observeErrorToast
 import com.davidbrazuna.pokemonapp.viewmodel.PokemonDetailViewModel
 import com.davidbrazuna.pokemonapp.viewmodel.PokemonListViewModel
 
@@ -20,7 +20,6 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         private const val VISIBLE_THRESHOLD = 2
-        const val POKEMON_NAME = "POKEMON_NAME"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -35,7 +34,7 @@ class MainActivity : AppCompatActivity() {
         // The list load is triggered by the ViewModel's init, so it survives
         // configuration changes and is not re-triggered on every onCreate.
         observePokemonList()
-        observeError()
+        observeErrorToast(viewModel.observeErrorLiveData())
 
         onPokemonClick()
     }
@@ -51,14 +50,6 @@ class MainActivity : AppCompatActivity() {
     private fun observePokemonList() {
         viewModel.observePokemonListLiveData().observe(this) { pokemons ->
             pokemonListItemAdapter.setPokemonList(pokemons)
-        }
-    }
-
-    private fun observeError() {
-        viewModel.observeErrorLiveData().observe(this) { error ->
-            if (error != null) {
-                Toast.makeText(this, error, Toast.LENGTH_SHORT).show()
-            }
         }
     }
 

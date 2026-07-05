@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.davidbrazuna.pokemonapp.data.PokemonRepository
 import com.davidbrazuna.pokemonapp.model.PokemonWithImage
 import com.davidbrazuna.pokemonapp.retrofit.RetrofitInstance
+import com.davidbrazuna.pokemonapp.util.Event
 import kotlinx.coroutines.launch
 
 class PokemonListViewModel(
@@ -14,14 +15,17 @@ class PokemonListViewModel(
 ) : ViewModel() {
 
     private val pokemonListLiveData = MutableLiveData<List<PokemonWithImage>>()
-    private val errorLiveData = MutableLiveData<String?>()
+    private val errorLiveData = MutableLiveData<Event<String>>()
 
     private var nextPageUrl: String? = null
     private var previousPageUrl: String? = null
+    private var lastRequestedUrl: String = INITIAL_URL
+    private var isLoading = false
 
     companion object {
-        private const val INITIAL_URL =
-            "https://pokeapi.co/api/v2/pokemon/?offset=0&limit=20"
+        // Relative to Retrofit's baseUrl (see RetrofitInstance.BASE_URL) so the
+        // host isn't duplicated across files.
+        private const val INITIAL_URL = "pokemon?offset=0&limit=20"
     }
 
     init {
@@ -29,17 +33,26 @@ class PokemonListViewModel(
     }
 
     private fun loadPokemonList(url: String) {
+        // Guards against overlapping requests (e.g. fast fling triggering
+        // onScrolled multiple times) racing and corrupting pagination state.
+        if (isLoading) return
+        isLoading = true
+        lastRequestedUrl = url
+
         viewModelScope.launch {
-            repository.getPokemonPage(url)
-                .onSuccess { page ->
-                    nextPageUrl = page.nextUrl
-                    previousPageUrl = page.previousUrl
-                    pokemonListLiveData.value = page.pokemons
-                    errorLiveData.value = null
-                }
-                .onFailure { throwable ->
-                    errorLiveData.value = throwable.message ?: "Unknown error"
-                }
+            try {
+                repository.getPokemonPage(url)
+                    .onSuccess { page ->
+                        nextPageUrl = page.nextUrl
+                        previousPageUrl = page.previousUrl
+                        pokemonListLiveData.value = page.pokemons
+                    }
+                    .onFailure { throwable ->
+                        errorLiveData.value = Event(throwable.message ?: "Unknown error")
+                    }
+            } finally {
+                isLoading = false
+            }
         }
     }
 
@@ -51,12 +64,12 @@ class PokemonListViewModel(
         previousPageUrl?.let { loadPokemonList(it) }
     }
 
-    // Re-triggers the initial load, e.g. after an error state.
+    // Re-triggers the request that failed, not necessarily the first page.
     fun retry() {
-        loadPokemonList(INITIAL_URL)
+        loadPokemonList(lastRequestedUrl)
     }
 
     fun observePokemonListLiveData(): LiveData<List<PokemonWithImage>> = pokemonListLiveData
 
-    fun observeErrorLiveData(): LiveData<String?> = errorLiveData
+    fun observeErrorLiveData(): LiveData<Event<String>> = errorLiveData
 }
