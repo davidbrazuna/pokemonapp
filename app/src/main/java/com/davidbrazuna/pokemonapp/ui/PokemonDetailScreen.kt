@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -23,23 +24,32 @@ import com.davidbrazuna.pokemonapp.model.AbilityItem
 import com.davidbrazuna.pokemonapp.model.PokemonDetailResponseData
 import com.davidbrazuna.pokemonapp.model.Sprites
 import com.davidbrazuna.pokemonapp.ui.components.LoadingIndicator
+import com.davidbrazuna.pokemonapp.ui.components.PokemonDetailTopBar
 import com.davidbrazuna.pokemonapp.ui.components.PokemonSprite
 import com.davidbrazuna.pokemonapp.ui.components.RetryContent
 import com.davidbrazuna.pokemonapp.viewmodel.DetailUiState
 import com.davidbrazuna.pokemonapp.viewmodel.PokemonDetailViewModel
 
-// Stateful entry point: binds the ViewModel and delegates to the stateless body.
+// Stateful entry point: binds the ViewModel and wraps the body in a Scaffold with
+// the detail top bar (back arrow + Pokemon name).
 @Composable
 fun PokemonDetailScreen(
+    title: String,
+    onBack: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: PokemonDetailViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    PokemonDetailScreen(
-        uiState = uiState,
-        onRetry = viewModel::retry,
-        modifier = modifier
-    )
+    Scaffold(
+        modifier = modifier,
+        topBar = { PokemonDetailTopBar(title = title, onBack = onBack) }
+    ) { innerPadding ->
+        PokemonDetailScreen(
+            uiState = uiState,
+            onRetry = viewModel::retry,
+            modifier = Modifier.padding(innerPadding)
+        )
+    }
 }
 
 // Stateless body: takes state + callbacks and no ViewModel, so it is @Preview-able
@@ -81,7 +91,7 @@ private fun PokemonDetailContent(
             )
         }
         item { DetailField(stringResource(R.string.detail_id, pokemon.id)) }
-        item { DetailField(stringResource(R.string.detail_name, pokemon.name)) }
+        item { DetailField(stringResource(R.string.detail_name, pokemon.name.capitalizeForDisplay())) }
         item { DetailField(stringResource(R.string.detail_height, pokemon.height)) }
         item { DetailField(stringResource(R.string.detail_weight, pokemon.weight)) }
         item {

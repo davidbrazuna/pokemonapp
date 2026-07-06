@@ -10,6 +10,11 @@
     <string name="detail_base_experience_unknown">-</string>
     <string name="detail_abilities_title">Abilities:</string>
 
+    <!-- App bars -->
+    <string name="app_bar_list_title">Pokédex</string>
+    <string name="action_refresh">Refresh</string>
+    <string name="action_back">Back</string>
+
     <!-- Shared -->
     <string name="retry">Retry</string>
     <string name="error_generic">Something went wrong</string>

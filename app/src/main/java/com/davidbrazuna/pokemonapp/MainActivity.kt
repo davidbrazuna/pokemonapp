@@ -5,19 +5,18 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
 import com.davidbrazuna.pokemonapp.ui.PokemonDetailScreen
 import com.davidbrazuna.pokemonapp.ui.PokemonListScreen
+import com.davidbrazuna.pokemonapp.ui.capitalizeForDisplay
 import com.davidbrazuna.pokemonapp.ui.navigation.Route
 
 class MainActivity : ComponentActivity() {
@@ -28,10 +27,10 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             AppTheme {
+                // Each screen owns its own Scaffold + TopAppBar, so there is no
+                // app-level Scaffold here; the screens' Scaffolds consume the insets.
                 Surface {
-                    Scaffold { innerPadding ->
-                        PokemonApp(modifier = Modifier.padding(innerPadding))
-                    }
+                    PokemonNavHost()
                 }
             }
         }
@@ -39,12 +38,11 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-private fun PokemonApp(modifier: Modifier = Modifier) {
+private fun PokemonNavHost() {
     val navController = rememberNavController()
     NavHost(
         navController = navController,
-        startDestination = Route.PokemonList,
-        modifier = modifier
+        startDestination = Route.PokemonList
     ) {
         composable<Route.PokemonList> {
             PokemonListScreen(
@@ -53,9 +51,14 @@ private fun PokemonApp(modifier: Modifier = Modifier) {
                 }
             )
         }
-        composable<Route.PokemonDetail> {
-            // Route args land in the ViewModel's SavedStateHandle automatically.
-            PokemonDetailScreen()
+        composable<Route.PokemonDetail> { backStackEntry ->
+            // The name feeds the top-bar title; route args also land in the
+            // ViewModel's SavedStateHandle automatically.
+            val route = backStackEntry.toRoute<Route.PokemonDetail>()
+            PokemonDetailScreen(
+                title = route.name.capitalizeForDisplay(),
+                onBack = navController::navigateUp
+            )
         }
     }
 }

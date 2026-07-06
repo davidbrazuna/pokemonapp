@@ -7,7 +7,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -20,6 +22,7 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
 import com.davidbrazuna.pokemonapp.model.PokemonWithImage
 import com.davidbrazuna.pokemonapp.ui.components.LoadingIndicator
+import com.davidbrazuna.pokemonapp.ui.components.PokemonListTopBar
 import com.davidbrazuna.pokemonapp.ui.components.PokemonSprite
 import com.davidbrazuna.pokemonapp.ui.components.RetryContent
 import com.davidbrazuna.pokemonapp.viewmodel.PokemonListViewModel
@@ -32,14 +35,24 @@ fun PokemonListScreen(
 ) {
     val items = viewModel.pokemonPagingFlow.collectAsLazyPagingItems()
 
-    when (val refresh = items.loadState.refresh) {
-        is LoadState.Loading -> LoadingIndicator(modifier.fillMaxSize())
-        is LoadState.Error -> RetryContent(
-            message = refresh.error.message,
-            onRetry = items::retry,
-            modifier = modifier.fillMaxSize()
-        )
-        else -> PokemonList(items = items, onPokemonClick = onPokemonClick, modifier = modifier)
+    Scaffold(
+        modifier = modifier,
+        topBar = { PokemonListTopBar(onRefresh = items::refresh) }
+    ) { innerPadding ->
+        val contentModifier = Modifier.padding(innerPadding)
+        when (val refresh = items.loadState.refresh) {
+            is LoadState.Loading -> LoadingIndicator(contentModifier.fillMaxSize())
+            is LoadState.Error -> RetryContent(
+                message = refresh.error.message,
+                onRetry = items::retry,
+                modifier = contentModifier.fillMaxSize()
+            )
+            else -> PokemonList(
+                items = items,
+                onPokemonClick = onPokemonClick,
+                modifier = contentModifier
+            )
+        }
     }
 }
 
@@ -56,6 +69,7 @@ private fun PokemonList(
         ) { index ->
             items[index]?.let { pokemon ->
                 PokemonRow(pokemon = pokemon, onClick = { onPokemonClick(pokemon) })
+                HorizontalDivider()
             }
         }
 
@@ -95,6 +109,9 @@ private fun PokemonRow(
                 .size(64.dp)
                 .padding(end = 16.dp)
         )
-        Text(text = pokemon.name, style = MaterialTheme.typography.titleMedium)
+        Text(
+            text = pokemon.name.capitalizeForDisplay(),
+            style = MaterialTheme.typography.titleMedium
+        )
     }
 }
