@@ -13,10 +13,8 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.toRoute
 import com.davidbrazuna.pokemonapp.ui.PokemonDetailScreen
 import com.davidbrazuna.pokemonapp.ui.PokemonListScreen
-import com.davidbrazuna.pokemonapp.ui.capitalizeForDisplay
 import com.davidbrazuna.pokemonapp.ui.navigation.Route
 
 class MainActivity : ComponentActivity() {
@@ -51,14 +49,10 @@ private fun PokemonNavHost() {
                 }
             )
         }
-        composable<Route.PokemonDetail> { backStackEntry ->
-            // The name feeds the top-bar title; route args also land in the
-            // ViewModel's SavedStateHandle automatically.
-            val route = backStackEntry.toRoute<Route.PokemonDetail>()
-            PokemonDetailScreen(
-                title = route.name.capitalizeForDisplay(),
-                onBack = navController::navigateUp
-            )
+        composable<Route.PokemonDetail> {
+            // Route args land in the ViewModel's SavedStateHandle automatically;
+            // the screen derives its own title from there.
+            PokemonDetailScreen(onBack = navController::navigateUp)
         }
     }
 }

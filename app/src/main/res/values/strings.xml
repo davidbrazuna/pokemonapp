@@ -18,4 +18,5 @@
     <!-- Shared -->
     <string name="retry">Retry</string>
     <string name="error_generic">Something went wrong</string>
+    <string name="error_refresh">Couldn\'t refresh</string>
 </resources>

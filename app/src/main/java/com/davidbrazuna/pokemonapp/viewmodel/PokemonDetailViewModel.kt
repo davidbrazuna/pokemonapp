@@ -32,7 +32,9 @@ class PokemonDetailViewModel(
     // Populated by the type-safe Route.PokemonDetail(name) argument. The NavHost
     // guarantees the argument is present, so this should never throw; kept as a
     // fail-fast guard for a future call site (e.g. a deep link) that forgets it.
-    private val pokemonName: String = savedStateHandle["name"]
+    // Exposed so the screen can title its top bar without the nav layer having to
+    // pass (and format) the name a second time.
+    val pokemonName: String = savedStateHandle["name"]
         ?: error("PokemonDetailViewModel requires a 'name' argument")
 
     private val _uiState = MutableStateFlow<DetailUiState>(DetailUiState.Loading)

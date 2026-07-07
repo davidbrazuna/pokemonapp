@@ -9,36 +9,36 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBarColors
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import com.davidbrazuna.pokemonapp.R
 
-// Light-grey container (surfaceContainer adapts to light/dark) plus a drop shadow,
-// so the bar reads as a raised surface above the scrolling content.
-private val AppBarElevation = 4.dp
-
+// Shared skeleton for the app's top bars. surfaceContainer gives the bar its
+// tonal elevation (adapts to light/dark); no drop shadow, which M3 tonal surfaces
+// make redundant. Only the navigation icon and actions differ per screen.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun appBarColors(): TopAppBarColors =
-    TopAppBarDefaults.centerAlignedTopAppBarColors(
-        containerColor = MaterialTheme.colorScheme.surfaceContainer
+private fun PokemonTopBar(
+    title: String,
+    navigationIcon: @Composable () -> Unit = {},
+    actions: @Composable () -> Unit = {}
+) {
+    CenterAlignedTopAppBar(
+        colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainer
+        ),
+        title = { Text(title) },
+        navigationIcon = navigationIcon,
+        actions = { actions() }
     )
+}
 
-private fun Modifier.appBarShadow(): Modifier = shadow(elevation = AppBarElevation)
-
-// Top bar for the list screen: "Pokédex" centered, refresh action on the right.
-@OptIn(ExperimentalMaterial3Api::class)
+// List screen: "Pokédex" centered, refresh action on the right.
 @Composable
 fun PokemonListTopBar(onRefresh: () -> Unit) {
-    CenterAlignedTopAppBar(
-        modifier = Modifier.appBarShadow(),
-        colors = appBarColors(),
-        title = { Text(stringResource(R.string.app_bar_list_title)) },
+    PokemonTopBar(
+        title = stringResource(R.string.app_bar_list_title),
         actions = {
             IconButton(onClick = onRefresh) {
                 Icon(
@@ -50,14 +50,11 @@ fun PokemonListTopBar(onRefresh: () -> Unit) {
     )
 }
 
-// Top bar for the detail screen: back arrow on the left, Pokemon name centered.
-@OptIn(ExperimentalMaterial3Api::class)
+// Detail screen: back arrow on the left, Pokemon name centered.
 @Composable
 fun PokemonDetailTopBar(title: String, onBack: () -> Unit) {
-    CenterAlignedTopAppBar(
-        modifier = Modifier.appBarShadow(),
-        colors = appBarColors(),
-        title = { Text(title) },
+    PokemonTopBar(
+        title = title,
         navigationIcon = {
             IconButton(onClick = onBack) {
                 Icon(
