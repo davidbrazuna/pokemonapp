@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.ksp)
 }
 
 android {
@@ -76,6 +77,13 @@ dependencies {
     // Coil 3 for image loading in Compose; coil-network-okhttp reuses our OkHttp.
     implementation(libs.coil.compose)
     implementation(libs.coil.network.okhttp)
+
+    // Room for offline caching. room-paging bridges Room's generated PagingSource
+    // to Paging 3; room-compiler runs through KSP (no kapt in this project).
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    implementation(libs.androidx.room.paging)
+    ksp(libs.androidx.room.compiler)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

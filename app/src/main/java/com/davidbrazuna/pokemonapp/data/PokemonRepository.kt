@@ -1,30 +1,40 @@
 package com.davidbrazuna.pokemonapp.data
 
+import androidx.paging.ExperimentalPagingApi
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
+import androidx.paging.map
+import com.davidbrazuna.pokemonapp.data.local.PokemonDatabase
 import com.davidbrazuna.pokemonapp.model.PokemonWithImage
 import com.davidbrazuna.pokemonapp.retrofit.PokemonApi
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 
-// Single source for Pokemon data. The list is served through Paging 3; detail
-// calls are wrapped in Result so callers never deal with raw exceptions.
+// Single source for Pokemon data. The list is offline-first: Room is the source
+// of truth the UI reads, kept in sync from the network by PokemonRemoteMediator.
+// Detail calls are wrapped in Result so callers never deal with raw exceptions.
 class PokemonRepository(
-    private val api: PokemonApi
+    private val api: PokemonApi,
+    private val database: PokemonDatabase
 ) {
 
-    // Paging 3 owns loading/append/retry state; the sprite is derived from the id
-    // inside PokemonPagingSource, so no per-Pokemon detail call is made.
+    // Room's DAO supplies the PagingSource; the RemoteMediator fetches pages into
+    // Room. The Flow's element type stays PokemonWithImage, so the ViewModel and
+    // UI are unchanged — the entity is mapped back to the existing UI model here.
     //
-    // initialLoadSize must match pageSize: PagingConfig defaults it to 3x pageSize,
-    // but PokemonPagingSource derives prevKey/nextKey from params.loadSize, so a
-    // mismatched initial load leaves a gap/overlap between the refresh page and
-    // subsequent prepend/append pages (and duplicate keys in the list).
+    // initialLoadSize == pageSize (PagingConfig defaults it to 3x): the mediator
+    // fetches exactly one API page per load and stores the API's own next-offset,
+    // so keeping the initial load one page wide keeps the mediator's offset in
+    // step with what Paging actually loaded.
+    @OptIn(ExperimentalPagingApi::class)
     fun getPokemonPager(): Flow<PagingData<PokemonWithImage>> =
-        Pager(PagingConfig(pageSize = PAGE_SIZE, initialLoadSize = PAGE_SIZE)) {
-            PokemonPagingSource(api)
-        }.flow
+        Pager(
+            config = PagingConfig(pageSize = PAGE_SIZE, initialLoadSize = PAGE_SIZE),
+            remoteMediator = PokemonRemoteMediator(api, database, PAGE_SIZE),
+            pagingSourceFactory = { database.pokemonDao().pagingSource() }
+        ).flow.map { pagingData -> pagingData.map { it.toUiModel() } }
 
     suspend fun getPokemonDetails(name: String) = safeApiCall {
         api.getPokemonDetails(name)
