@@ -7,23 +7,36 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
+import com.davidbrazuna.pokemonapp.R
 import com.davidbrazuna.pokemonapp.model.PokemonWithImage
 import com.davidbrazuna.pokemonapp.ui.components.LoadingIndicator
+import com.davidbrazuna.pokemonapp.ui.components.PokemonListTopBar
 import com.davidbrazuna.pokemonapp.ui.components.PokemonSprite
 import com.davidbrazuna.pokemonapp.ui.components.RetryContent
 import com.davidbrazuna.pokemonapp.viewmodel.PokemonListViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PokemonListScreen(
     onPokemonClick: (PokemonWithImage) -> Unit,
@@ -31,15 +44,53 @@ fun PokemonListScreen(
     viewModel: PokemonListViewModel = viewModel()
 ) {
     val items = viewModel.pokemonPagingFlow.collectAsLazyPagingItems()
+    val refreshState = items.loadState.refresh
+    val snackbarHostState = remember { SnackbarHostState() }
 
-    when (val refresh = items.loadState.refresh) {
-        is LoadState.Loading -> LoadingIndicator(modifier.fillMaxSize())
-        is LoadState.Error -> RetryContent(
-            message = refresh.error.message,
-            onRetry = items::retry,
-            modifier = modifier.fillMaxSize()
-        )
-        else -> PokemonList(items = items, onPokemonClick = onPokemonClick, modifier = modifier)
+    // A refresh that fails while the list is already populated is silent by design
+    // (the list is kept). Surface that failure with a snackbar so the user knows
+    // the refresh didn't happen, with a Retry action.
+    val refreshFailedMessage = stringResource(R.string.error_refresh)
+    val retryLabel = stringResource(R.string.retry)
+    val refreshFailed = refreshState is LoadState.Error && items.itemCount > 0
+    LaunchedEffect(refreshFailed) {
+        if (refreshFailed) {
+            val result = snackbarHostState.showSnackbar(
+                message = refreshFailedMessage,
+                actionLabel = retryLabel
+            )
+            if (result == SnackbarResult.ActionPerformed) items.refresh()
+        }
+    }
+
+    Scaffold(
+        modifier = modifier,
+        topBar = { PokemonListTopBar(onRefresh = items::refresh) },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { innerPadding ->
+        val contentModifier = Modifier.padding(innerPadding)
+        // Full-screen loading/error only on the initial load (empty list). Once
+        // there are items, a refresh shows as an overlay indicator and never
+        // replaces the loaded content — a failed refresh keeps the list intact.
+        when {
+            items.itemCount == 0 && refreshState is LoadState.Loading ->
+                LoadingIndicator(contentModifier.fillMaxSize())
+
+            items.itemCount == 0 && refreshState is LoadState.Error ->
+                RetryContent(
+                    message = refreshState.error.message,
+                    onRetry = items::retry,
+                    modifier = contentModifier.fillMaxSize()
+                )
+
+            else -> PullToRefreshBox(
+                isRefreshing = refreshState is LoadState.Loading,
+                onRefresh = items::refresh,
+                modifier = contentModifier.fillMaxSize()
+            ) {
+                PokemonList(items = items, onPokemonClick = onPokemonClick)
+            }
+        }
     }
 }
 
@@ -55,6 +106,9 @@ private fun PokemonList(
             key = items.itemKey { it.name }
         ) { index ->
             items[index]?.let { pokemon ->
+                // Divider above every row except the first — separates items
+                // without leaving a stray rule after the last one.
+                if (index > 0) HorizontalDivider()
                 PokemonRow(pokemon = pokemon, onClick = { onPokemonClick(pokemon) })
             }
         }
@@ -95,6 +149,9 @@ private fun PokemonRow(
                 .size(64.dp)
                 .padding(end = 16.dp)
         )
-        Text(text = pokemon.name, style = MaterialTheme.typography.titleMedium)
+        Text(
+            text = pokemon.name.capitalizeForDisplay(),
+            style = MaterialTheme.typography.titleMedium
+        )
     }
 }

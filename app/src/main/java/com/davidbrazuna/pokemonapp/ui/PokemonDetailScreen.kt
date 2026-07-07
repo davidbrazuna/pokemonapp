@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -23,41 +24,55 @@ import com.davidbrazuna.pokemonapp.model.AbilityItem
 import com.davidbrazuna.pokemonapp.model.PokemonDetailResponseData
 import com.davidbrazuna.pokemonapp.model.Sprites
 import com.davidbrazuna.pokemonapp.ui.components.LoadingIndicator
+import com.davidbrazuna.pokemonapp.ui.components.PokemonDetailTopBar
 import com.davidbrazuna.pokemonapp.ui.components.PokemonSprite
 import com.davidbrazuna.pokemonapp.ui.components.RetryContent
 import com.davidbrazuna.pokemonapp.viewmodel.DetailUiState
 import com.davidbrazuna.pokemonapp.viewmodel.PokemonDetailViewModel
 
 // Stateful entry point: binds the ViewModel and delegates to the stateless body.
+// The top-bar title is derived here from the ViewModel's name (which comes from
+// the route arg via SavedStateHandle), so the nav layer doesn't format it.
 @Composable
 fun PokemonDetailScreen(
+    onBack: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: PokemonDetailViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     PokemonDetailScreen(
+        title = viewModel.pokemonName.capitalizeForDisplay(),
         uiState = uiState,
         onRetry = viewModel::retry,
+        onBack = onBack,
         modifier = modifier
     )
 }
 
-// Stateless body: takes state + callbacks and no ViewModel, so it is @Preview-able
-// and testable with DetailUiState.Success/Error/Loading directly.
+// Stateless body: takes state + callbacks and no ViewModel, so the Scaffold + top
+// bar show in @Preview and it is testable with DetailUiState.Success/Error/Loading.
 @Composable
 fun PokemonDetailScreen(
+    title: String,
     uiState: DetailUiState,
     onRetry: () -> Unit,
+    onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    when (uiState) {
-        is DetailUiState.Loading -> LoadingIndicator(modifier.fillMaxSize())
-        is DetailUiState.Error -> RetryContent(
-            message = uiState.message,
-            onRetry = onRetry,
-            modifier = modifier.fillMaxSize()
-        )
-        is DetailUiState.Success -> PokemonDetailContent(uiState.pokemon, modifier)
+    Scaffold(
+        modifier = modifier,
+        topBar = { PokemonDetailTopBar(title = title, onBack = onBack) }
+    ) { innerPadding ->
+        val contentModifier = Modifier.padding(innerPadding).fillMaxSize()
+        when (uiState) {
+            is DetailUiState.Loading -> LoadingIndicator(contentModifier)
+            is DetailUiState.Error -> RetryContent(
+                message = uiState.message,
+                onRetry = onRetry,
+                modifier = contentModifier
+            )
+            is DetailUiState.Success -> PokemonDetailContent(uiState.pokemon, contentModifier)
+        }
     }
 }
 
@@ -81,7 +96,7 @@ private fun PokemonDetailContent(
             )
         }
         item { DetailField(stringResource(R.string.detail_id, pokemon.id)) }
-        item { DetailField(stringResource(R.string.detail_name, pokemon.name)) }
+        item { DetailField(stringResource(R.string.detail_name, pokemon.name.capitalizeForDisplay())) }
         item { DetailField(stringResource(R.string.detail_height, pokemon.height)) }
         item { DetailField(stringResource(R.string.detail_weight, pokemon.weight)) }
         item {
@@ -135,17 +150,32 @@ private val previewPokemon = PokemonDetailResponseData(
 @Preview(showBackground = true)
 @Composable
 private fun PokemonDetailSuccessPreview() {
-    PokemonDetailScreen(uiState = DetailUiState.Success(previewPokemon), onRetry = {})
+    PokemonDetailScreen(
+        title = "Ivysaur",
+        uiState = DetailUiState.Success(previewPokemon),
+        onRetry = {},
+        onBack = {}
+    )
 }
 
 @Preview(showBackground = true)
 @Composable
 private fun PokemonDetailErrorPreview() {
-    PokemonDetailScreen(uiState = DetailUiState.Error("Unable to resolve host"), onRetry = {})
+    PokemonDetailScreen(
+        title = "Ivysaur",
+        uiState = DetailUiState.Error("Unable to resolve host"),
+        onRetry = {},
+        onBack = {}
+    )
 }
 
 @Preview(showBackground = true)
 @Composable
 private fun PokemonDetailLoadingPreview() {
-    PokemonDetailScreen(uiState = DetailUiState.Loading, onRetry = {})
+    PokemonDetailScreen(
+        title = "Ivysaur",
+        uiState = DetailUiState.Loading,
+        onRetry = {},
+        onBack = {}
+    )
 }
