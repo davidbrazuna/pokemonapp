@@ -1,9 +1,11 @@
 package com.davidbrazuna.pokemonapp.viewmodel
 
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.SavedStateHandle
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.davidbrazuna.pokemonapp.data.PokemonRepository
+import com.davidbrazuna.pokemonapp.data.local.PokemonDatabase
 import com.davidbrazuna.pokemonapp.model.PokemonDetailResponseData
 import com.davidbrazuna.pokemonapp.retrofit.RetrofitInstance
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,12 +24,17 @@ sealed interface DetailUiState {
 }
 
 class PokemonDetailViewModel(
+    application: Application,
     savedStateHandle: SavedStateHandle
-) : ViewModel() {
+) : AndroidViewModel(application) {
 
     // Instantiated directly (not via constructor) because the default factory only
-    // auto-injects a lone SavedStateHandle. Revisit once Hilt/@HiltViewModel lands.
-    private val repository = PokemonRepository(RetrofitInstance.api)
+    // auto-injects Application/SavedStateHandle. The database is unused by detail
+    // calls but the repository now requires it. Revisit once Hilt lands.
+    private val repository = PokemonRepository(
+        RetrofitInstance.api,
+        PokemonDatabase.getInstance(application)
+    )
 
     // Populated by the type-safe Route.PokemonDetail(name) argument. The NavHost
     // guarantees the argument is present, so this should never throw; kept as a

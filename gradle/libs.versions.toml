@@ -16,6 +16,10 @@ paging = "3.5.0"
 navigation = "2.9.8"
 # 3.4.0 depends on kotlin-stdlib 2.3.10 (matches our Kotlin); 3.5.0 forces 2.4.0.
 coil = "3.4.0"
+room = "2.8.4"
+# KSP 2.3.x uses its own independent version line (no <kotlin>-<ksp> suffix) and
+# is compatible with Kotlin 2.3.10.
+ksp = "2.3.9"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -46,9 +50,15 @@ androidx-paging-compose = { group = "androidx.paging", name = "paging-compose", 
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigation" }
 coil-compose = { group = "io.coil-kt.coil3", name = "coil-compose", version.ref = "coil" }
 coil-network-okhttp = { group = "io.coil-kt.coil3", name = "coil-network-okhttp", version.ref = "coil" }
+# Room for offline caching; room-paging supplies the RemoteMediator integration.
+androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
+androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
+androidx-room-paging = { group = "androidx.room", name = "room-paging", version.ref = "room" }
+androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 
