@@ -24,10 +24,10 @@ class PokemonRepository(
     // Room. The Flow's element type stays PokemonWithImage, so the ViewModel and
     // UI are unchanged — the entity is mapped back to the existing UI model here.
     //
-    // initialLoadSize must match pageSize: PagingConfig defaults it to 3x pageSize,
-    // but the mediator derives prevKey/nextKey from a single page's offset, so a
-    // mismatched initial load would leave a gap between the refresh page and
-    // subsequent append pages.
+    // initialLoadSize == pageSize (PagingConfig defaults it to 3x): the mediator
+    // fetches exactly one API page per load and stores the API's own next-offset,
+    // so keeping the initial load one page wide keeps the mediator's offset in
+    // step with what Paging actually loaded.
     @OptIn(ExperimentalPagingApi::class)
     fun getPokemonPager(): Flow<PagingData<PokemonWithImage>> =
         Pager(

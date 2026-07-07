@@ -6,14 +6,14 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 
 @Database(
-    entities = [PokemonEntity::class, RemoteKeysEntity::class],
+    entities = [PokemonEntity::class, PagingMetadataEntity::class],
     version = 1,
     exportSchema = false
 )
 abstract class PokemonDatabase : RoomDatabase() {
 
     abstract fun pokemonDao(): PokemonDao
-    abstract fun remoteKeysDao(): RemoteKeysDao
+    abstract fun pagingMetadataDao(): PagingMetadataDao
 
     companion object {
         @Volatile
@@ -27,7 +27,13 @@ abstract class PokemonDatabase : RoomDatabase() {
                     context.applicationContext,
                     PokemonDatabase::class.java,
                     "pokemon.db"
-                ).build().also { instance = it }
+                )
+                    // This is a disposable network cache, not user data: on a
+                    // schema change just drop and rebuild it rather than shipping
+                    // a migration — the RemoteMediator refills it on next launch.
+                    .fallbackToDestructiveMigration(dropAllTables = true)
+                    .build()
+                    .also { instance = it }
             }
     }
 }
