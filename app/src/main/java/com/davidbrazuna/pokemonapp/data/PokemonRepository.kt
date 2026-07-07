@@ -11,11 +11,17 @@ import com.davidbrazuna.pokemonapp.retrofit.PokemonApi
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import javax.inject.Inject
+import javax.inject.Singleton
 
 // Single source for Pokemon data. The list is offline-first: Room is the source
 // of truth the UI reads, kept in sync from the network by PokemonRemoteMediator.
 // Detail calls are wrapped in Result so callers never deal with raw exceptions.
-class PokemonRepository(
+//
+// @Singleton: stateless, so one shared instance is fine (and lets both VMs share
+// the same Pager/cache wiring).
+@Singleton
+class PokemonRepository @Inject constructor(
     private val api: PokemonApi,
     private val database: PokemonDatabase
 ) {

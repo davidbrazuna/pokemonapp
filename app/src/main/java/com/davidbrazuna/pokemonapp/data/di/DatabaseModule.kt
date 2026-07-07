@@ -1,0 +1,40 @@
+package com.davidbrazuna.pokemonapp.data.di
+
+import android.content.Context
+import androidx.room.Room
+import com.davidbrazuna.pokemonapp.data.local.PagingMetadataDao
+import com.davidbrazuna.pokemonapp.data.local.PokemonDao
+import com.davidbrazuna.pokemonapp.data.local.PokemonDatabase
+import dagger.Module
+import dagger.Provides
+import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
+import dagger.hilt.components.SingletonComponent
+import javax.inject.Singleton
+
+// Database graph, replacing PokemonDatabase.getInstance(). The @Singleton here is
+// the single instance the whole app shares.
+@Module
+@InstallIn(SingletonComponent::class)
+object DatabaseModule {
+
+    @Provides
+    @Singleton
+    fun provideDatabase(@ApplicationContext context: Context): PokemonDatabase =
+        Room.databaseBuilder(context, PokemonDatabase::class.java, "pokemon.db")
+            // This is a disposable network cache, not user data: on a schema
+            // change just drop and rebuild it rather than shipping a migration —
+            // the RemoteMediator refills it on next launch.
+            .fallbackToDestructiveMigration(dropAllTables = true)
+            .build()
+
+    // DAOs exposed for injection sites that only need one table; the repository
+    // takes the database itself (the mediator needs database.withTransaction).
+    @Provides
+    fun providePokemonDao(database: PokemonDatabase): PokemonDao =
+        database.pokemonDao()
+
+    @Provides
+    fun providePagingMetadataDao(database: PokemonDatabase): PagingMetadataDao =
+        database.pagingMetadataDao()
+}
