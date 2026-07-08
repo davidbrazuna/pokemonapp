@@ -41,6 +41,7 @@ import kotlinx.coroutines.flow.flowOf
 
 // Stateful entry point: binds the ViewModel and delegates to the stateless body,
 // mirroring the split used by PokemonDetailScreen.
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PokemonListScreen(
     onPokemonClick: (PokemonWithImage) -> Unit,
@@ -194,6 +195,6 @@ private val previewPokemonList = listOf(
 @Preview(showBackground = true)
 @Composable
 private fun PokemonListPreview() {
-    val items = flowOf(PagingData.from(previewPokemonList)).collectAsLazyPagingItems()
+    val items = remember { flowOf(PagingData.from(previewPokemonList)) }.collectAsLazyPagingItems()
     PokemonListScreen(items = items, onPokemonClick = {}, onBack = {})
 }

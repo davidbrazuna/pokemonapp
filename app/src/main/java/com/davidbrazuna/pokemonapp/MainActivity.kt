@@ -54,8 +54,12 @@ private fun PokemonNavHost() {
     ) {
         composable<Route.Home> {
             HomeScreen(
-                onPokedexClick = { navController.navigate(Route.PokemonList) },
-                onAboutClick = { navController.navigate(Route.About) }
+                onPokedexClick = {
+                    navController.navigate(Route.PokemonList) { launchSingleTop = true }
+                },
+                onAboutClick = {
+                    navController.navigate(Route.About) { launchSingleTop = true }
+                }
             )
         }
         composable<Route.PokemonList> {
@@ -63,7 +67,9 @@ private fun PokemonNavHost() {
             // always lands back on Home here.
             PokemonListScreen(
                 onPokemonClick = { pokemon ->
-                    navController.navigate(Route.PokemonDetail(pokemon.name))
+                    navController.navigate(Route.PokemonDetail(pokemon.name)) {
+                        launchSingleTop = true
+                    }
                 },
                 onBack = navController::navigateUp
             )

@@ -58,8 +58,7 @@ fun AboutScreen(
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(top = 8.dp)
             )
-            // developer_photo must be added to res/drawable manually (binary
-            // assets can't be written through the code-editing tools).
+            // developer_photo.jpeg (380x380) lives in res/drawable.
             Image(
                 painter = painterResource(R.drawable.developer_photo),
                 contentDescription = stringResource(R.string.about_photo_description),
