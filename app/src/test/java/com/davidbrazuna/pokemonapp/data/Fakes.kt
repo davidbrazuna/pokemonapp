@@ -88,6 +88,18 @@ fun pokemonList(ids: IntRange, next: String?): PokemonList =
         }
     )
 
+// A page whose item urls carry no numeric id, so toEntity() maps every one to
+// null (mapNotNull drops them all). Models the "unparseable page" risk.
+fun unparseableList(count: Int, next: String?): PokemonList =
+    PokemonList(
+        count = 2000,
+        next = next,
+        previous = null,
+        results = List(count) { i ->
+            Pokemon(name = "mystery-$i", url = "https://pokeapi.co/api/v2/pokemon/not-a-number/")
+        }
+    )
+
 // An empty PagingState — load() ignores its state argument (the append offset
 // comes from the metadata row, not the state), so one shared empty state is fine.
 fun <T : Any> emptyPagingState(): PagingState<Int, T> =

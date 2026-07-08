@@ -4,11 +4,14 @@ import androidx.paging.ExperimentalPagingApi
 import androidx.paging.LoadType
 import androidx.paging.RemoteMediator
 import com.davidbrazuna.pokemonapp.data.local.PagingMetadataEntity
+import com.davidbrazuna.pokemonapp.data.local.PokemonEntity
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.IOException
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
 
 @OptIn(ExperimentalPagingApi::class)
@@ -22,7 +25,7 @@ class PokemonRemoteMediatorTest {
 
     // Builds the mediator with a pinned clock; cacheTimeout defaults to 1h.
     private fun mediator(
-        cacheTimeout: kotlin.time.Duration = 1.hours,
+        cacheTimeout: Duration = 1.hours,
         now: Long = fixedNow
     ) = PokemonRemoteMediator(
         api = api,
@@ -86,6 +89,18 @@ class PokemonRemoteMediatorTest {
     }
 
     @Test
+    fun `initialize skips refresh exactly at the cache timeout boundary`() = runTest {
+        // age == cacheTimeout must still be fresh: the check is `age <= timeout`.
+        // Guards against a regression to `<`, which would refresh (and wipe) a
+        // cache that is exactly at the boundary.
+        metadataDao.upsert(PagingMetadataEntity(nextOffset = 20, lastUpdated = fixedNow - 1.hours.inWholeMilliseconds))
+
+        val action = mediator(cacheTimeout = 1.hours).initialize()
+
+        assertEquals(RemoteMediator.InitializeAction.SKIP_INITIAL_REFRESH, action)
+    }
+
+    @Test
     fun `initialize launches refresh once cache is stale`() = runTest {
         // lastUpdated 2h ago, cacheTimeout 1h -> stale.
         metadataDao.upsert(PagingMetadataEntity(nextOffset = 20, lastUpdated = fixedNow - 2 * 60 * 60 * 1000))
@@ -139,7 +154,7 @@ class PokemonRemoteMediatorTest {
     @Test
     fun `refresh requests offset zero, clears the cache and inserts the page`() = runTest {
         // Seed a stale row to prove REFRESH clears it.
-        pokemonDao.insertAll(listOf(PokemonEntityFixture.at(999)))
+        pokemonDao.insertAll(listOf(seedEntity(999)))
         api.enqueue(pokemonList(1..20, next = "https://pokeapi.co/api/v2/pokemon?offset=20&limit=20"))
 
         mediator().load(LoadType.REFRESH, emptyPagingState())
@@ -152,25 +167,49 @@ class PokemonRemoteMediatorTest {
     }
 
     @Test
+    fun `refresh with an all-unparseable page inserts nothing but stores next offset`() = runTest {
+        // A whole page whose item urls carry no numeric id -> mapNotNull drops all
+        // of them. The mediator must still record the next offset so APPEND can
+        // move past this page instead of stalling on it (the PR#7 risk).
+        api.enqueue(unparseableList(count = 20, next = "https://pokeapi.co/api/v2/pokemon?offset=20&limit=20"))
+
+        val result = mediator().load(LoadType.REFRESH, emptyPagingState())
+
+        assertFalse((result as RemoteMediator.MediatorResult.Success).endOfPaginationReached)
+        assertTrue(pokemonDao.items.isEmpty())
+        assertEquals(20, metadataDao.get()?.nextOffset)
+    }
+
+    @Test
+    fun `append inserts the page without clearing the existing cache`() = runTest {
+        // Existing page 1 in cache, metadata pointing at offset 20.
+        pokemonDao.insertAll((1..20).map { seedEntity(it) })
+        metadataDao.upsert(PagingMetadataEntity(nextOffset = 20, lastUpdated = fixedNow))
+        api.enqueue(pokemonList(21..40, next = "https://pokeapi.co/api/v2/pokemon?offset=40&limit=20"))
+
+        mediator().load(LoadType.APPEND, emptyPagingState())
+
+        // APPEND must not clear — the whole point of paging into the cache.
+        assertEquals(0, pokemonDao.clearAllCount)
+        assertEquals(40, pokemonDao.items.size)
+        assertEquals(40, metadataDao.get()?.nextOffset)
+    }
+
+    @Test
     fun `api failure surfaces as error and leaves the cache untouched`() = runTest {
-        pokemonDao.insertAll(listOf(PokemonEntityFixture.at(1)))
-        api.enqueueError(java.io.IOException("no network"))
+        pokemonDao.insertAll(listOf(seedEntity(1)))
+        api.enqueueError(IOException("no network"))
 
         val result = mediator().load(LoadType.REFRESH, emptyPagingState())
 
         assertTrue(result is RemoteMediator.MediatorResult.Error)
-        // clearAll runs inside the transaction, which is only entered after the
-        // successful API call — so a failed refresh must not have cleared anything.
+        // NOTE: this asserts ordering (the API call precedes the transaction, so a
+        // failure clears nothing) — NOT transactional atomicity. RunningTransactor
+        // executes the block plainly; real REFRESH rollback is an instrumented test.
         assertEquals(0, pokemonDao.clearAllCount)
         assertEquals(1, pokemonDao.items.size)
     }
-}
 
-// Small fixture for seeding the DAO with rows unrelated to a given API page.
-private object PokemonEntityFixture {
-    fun at(id: Int) =
-        com.davidbrazuna.pokemonapp.data.local.PokemonEntity(id = id, name = "seed-$id", imageUrl = null)
+    private fun seedEntity(id: Int) =
+        PokemonEntity(id = id, name = "seed-$id", imageUrl = null)
 }
-
-// Re-exported so the test file reads naturally.
-private typealias PokemonEntity = com.davidbrazuna.pokemonapp.data.local.PokemonEntity
