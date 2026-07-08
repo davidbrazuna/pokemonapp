@@ -4,9 +4,9 @@ import androidx.paging.ExperimentalPagingApi
 import androidx.paging.LoadType
 import androidx.paging.PagingState
 import androidx.paging.RemoteMediator
-import androidx.room.withTransaction
+import com.davidbrazuna.pokemonapp.data.local.PagingMetadataDao
 import com.davidbrazuna.pokemonapp.data.local.PagingMetadataEntity
-import com.davidbrazuna.pokemonapp.data.local.PokemonDatabase
+import com.davidbrazuna.pokemonapp.data.local.PokemonDao
 import com.davidbrazuna.pokemonapp.data.local.PokemonEntity
 import com.davidbrazuna.pokemonapp.retrofit.PokemonApi
 import kotlinx.coroutines.CancellationException
@@ -22,16 +22,16 @@ import kotlin.time.Duration.Companion.hours
 @OptIn(ExperimentalPagingApi::class)
 class PokemonRemoteMediator(
     private val api: PokemonApi,
-    private val database: PokemonDatabase,
+    private val pokemonDao: PokemonDao,
+    private val metadataDao: PagingMetadataDao,
+    // Seam over Room's withTransaction so load() is unit-testable (see Transactor).
+    private val transactor: Transactor,
     private val pageSize: Int,
     // Cache lifetime for the initialize() TTL. Injectable so tests can pin it.
     private val cacheTimeout: Duration = 1.hours,
     // Wall clock, injectable for the same reason.
     private val now: () -> Long = System::currentTimeMillis
 ) : RemoteMediator<Int, PokemonEntity>() {
-
-    private val pokemonDao = database.pokemonDao()
-    private val metadataDao = database.pagingMetadataDao()
 
     // Skip the automatic launch REFRESH while the cache is still fresh. Without
     // this, every online cold start wipes the whole cache and re-inserts only
@@ -74,7 +74,7 @@ class PokemonRemoteMediator(
             val nextOffset = offsetFromUrl(response.next)
             val entities = response.results.mapNotNull { it.toEntity() }
 
-            database.withTransaction {
+            transactor.run {
                 if (loadType == LoadType.REFRESH) {
                     pokemonDao.clearAll()
                 }

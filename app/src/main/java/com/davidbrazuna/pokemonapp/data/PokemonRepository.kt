@@ -38,7 +38,13 @@ class PokemonRepository @Inject constructor(
     fun getPokemonPager(): Flow<PagingData<PokemonWithImage>> =
         Pager(
             config = PagingConfig(pageSize = PAGE_SIZE, initialLoadSize = PAGE_SIZE),
-            remoteMediator = PokemonRemoteMediator(api, database, PAGE_SIZE),
+            remoteMediator = PokemonRemoteMediator(
+                api = api,
+                pokemonDao = database.pokemonDao(),
+                metadataDao = database.pagingMetadataDao(),
+                transactor = RoomTransactor(database),
+                pageSize = PAGE_SIZE
+            ),
             pagingSourceFactory = { database.pokemonDao().pagingSource() }
         ).flow.map { pagingData -> pagingData.map { it.toUiModel() } }
 

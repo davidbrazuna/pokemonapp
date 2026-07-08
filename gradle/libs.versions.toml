@@ -21,6 +21,9 @@ room = "2.8.4"
 # is compatible with Kotlin 2.3.10.
 ksp = "2.3.9"
 hilt = "2.60.1"
+# Aligns with the coroutines version already pulled transitively (<= 1.9.0);
+# 1.11.0 would drift ahead of runtime.
+coroutinesTest = "1.9.0"
 # 1.4.0 pulls lifecycle 2.11.0, which demands compileSdk 37; 1.3.0 needs only 35
 # (we compile against 36) and doesn't drag the SDK bump in.
 hiltNavigationCompose = "1.3.0"
@@ -30,6 +33,8 @@ androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = 
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
+# runTest / TestScope for the suspend-based mediator unit tests.
+kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutinesTest" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 androidx-lifecycle-viewmodel-ktx = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-ktx", version.ref = "lifecycle" }
 retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
