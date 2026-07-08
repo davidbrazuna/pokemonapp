@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Intentionally empty: the ring-drawing AVD experiment (avd_splash_icon,
+     vd_splash_icon) didn't pan out, so there's no longer an API 31+-specific
+     override — every API level now falls back to values/themes.xml's
+     Theme.App.Starting, which uses the static pokemon_121114 icon. -->
+<resources />

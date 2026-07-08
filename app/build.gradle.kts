@@ -92,6 +92,10 @@ dependencies {
     ksp(libs.hilt.compiler)
     implementation(libs.androidx.hilt.navigation.compose)
 
+    // Splash screen: compat shim so the same behavior (icon + exit animation)
+    // works below API 31 too, since minSdk is 28.
+    implementation(libs.androidx.core.splashscreen)
+
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.androidx.junit)
