@@ -56,7 +56,7 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation(platform(libs.okhttp.bom))
     implementation(libs.okhttp)
-    // Interceptor is added only when BuildConfig.DEBUG is true (see RetrofitInstance)
+    // Interceptor is added only when BuildConfig.DEBUG is true (see NetworkModule)
     implementation(libs.okhttp.logging.interceptor)
     // Compose — the BOM aligns all Compose artifact versions.
     implementation(platform(libs.androidx.compose.bom))

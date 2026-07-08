@@ -2,8 +2,6 @@ package com.davidbrazuna.pokemonapp.data.di
 
 import android.content.Context
 import androidx.room.Room
-import com.davidbrazuna.pokemonapp.data.local.PagingMetadataDao
-import com.davidbrazuna.pokemonapp.data.local.PokemonDao
 import com.davidbrazuna.pokemonapp.data.local.PokemonDatabase
 import dagger.Module
 import dagger.Provides
@@ -28,13 +26,6 @@ object DatabaseModule {
             .fallbackToDestructiveMigration(dropAllTables = true)
             .build()
 
-    // DAOs exposed for injection sites that only need one table; the repository
-    // takes the database itself (the mediator needs database.withTransaction).
-    @Provides
-    fun providePokemonDao(database: PokemonDatabase): PokemonDao =
-        database.pokemonDao()
-
-    @Provides
-    fun providePagingMetadataDao(database: PokemonDatabase): PagingMetadataDao =
-        database.pagingMetadataDao()
+    // No per-DAO @Provides: the repository injects the whole PokemonDatabase and
+    // the mediator reaches the DAOs off it (it needs database.withTransaction).
 }
