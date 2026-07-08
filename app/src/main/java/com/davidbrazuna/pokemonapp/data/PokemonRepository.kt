@@ -5,7 +5,9 @@ import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.map
+import com.davidbrazuna.pokemonapp.data.local.AbilityDescriptionEntity
 import com.davidbrazuna.pokemonapp.data.local.PokemonDatabase
+import com.davidbrazuna.pokemonapp.model.AbilityItem
 import com.davidbrazuna.pokemonapp.model.PokemonWithImage
 import com.davidbrazuna.pokemonapp.retrofit.PokemonApi
 import kotlinx.coroutines.CancellationException
@@ -52,6 +54,46 @@ class PokemonRepository @Inject constructor(
         api.getPokemonDetails(name)
     }
 
+    // Cache-first: a local read failure (e.g. a corrupt DB) degrades to a
+    // network fetch rather than failing outright — the cache is an optimization,
+    // not something that should surface as "the request failed" on its own. Only
+    // the network fetch is wrapped in safeApiCall, so a Result.failure here
+    // always means the network attempt failed, never an ambiguous local error.
+    suspend fun getAbilityDescription(ability: AbilityItem): Result<String> {
+        val cached = readCachedAbilityDescription(ability.name)
+        if (cached != null) return Result.success(cached)
+        return safeApiCall { fetchAndCacheAbilityDescription(ability) }
+    }
+
+    private suspend fun readCachedAbilityDescription(name: String): String? =
+        try {
+            database.abilityDescriptionDao().get(name)?.description
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            null
+        }
+
+    private suspend fun fetchAndCacheAbilityDescription(ability: AbilityItem): String {
+        val response = api.getAbilityDetail(ability.url)
+        val description = response.effectEntries
+            .firstOrNull { it.language.name == "en" }
+            ?.shortEffect
+            ?: NO_DESCRIPTION_FALLBACK
+        // Best-effort write: if it fails (disk full, corrupt DB), the worst
+        // outcome is losing the cache for next time, not losing the response
+        // we already have in hand. Left inside safeApiCall, an insert failure
+        // here would turn an already-successful network fetch into a reported
+        // Result.failure, contradicting getAbilityDescription's own guarantee
+        // that a failure always means the network attempt failed.
+        runCatching {
+            database.abilityDescriptionDao().insert(
+                AbilityDescriptionEntity(name = ability.name, description = description)
+            )
+        }
+        return description
+    }
+
     // Runs [block] and wraps the outcome in Result. CancellationException is
     // rethrown rather than wrapped: leaving a screen mid-request cancels the
     // coroutine, and that cancellation must propagate normally instead of
@@ -67,5 +109,6 @@ class PokemonRepository @Inject constructor(
 
     companion object {
         private const val PAGE_SIZE = 20
+        private const val NO_DESCRIPTION_FALLBACK = "No description available."
     }
 }

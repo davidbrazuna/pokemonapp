@@ -1,5 +1,6 @@
 package com.davidbrazuna.pokemonapp.retrofit
 
+import com.davidbrazuna.pokemonapp.model.AbilityDetailResponse
 import com.davidbrazuna.pokemonapp.model.PokemonDetailResponseData
 import com.davidbrazuna.pokemonapp.model.PokemonList
 import retrofit2.http.GET
@@ -13,4 +14,9 @@ interface PokemonApi {
 
     @GET("pokemon/{name}")
     suspend fun getPokemonDetails(@Path("name") name: String): PokemonDetailResponseData
+
+    // AbilityItem.url is already an absolute PokeAPI url, same @Url pattern as
+    // getPokemonList.
+    @GET
+    suspend fun getAbilityDetail(@Url url: String): AbilityDetailResponse
 }
