@@ -80,9 +80,17 @@ class PokemonRepository @Inject constructor(
             .firstOrNull { it.language.name == "en" }
             ?.shortEffect
             ?: NO_DESCRIPTION_FALLBACK
-        database.abilityDescriptionDao().insert(
-            AbilityDescriptionEntity(name = ability.name, description = description)
-        )
+        // Best-effort write: if it fails (disk full, corrupt DB), the worst
+        // outcome is losing the cache for next time, not losing the response
+        // we already have in hand. Left inside safeApiCall, an insert failure
+        // here would turn an already-successful network fetch into a reported
+        // Result.failure, contradicting getAbilityDescription's own guarantee
+        // that a failure always means the network attempt failed.
+        runCatching {
+            database.abilityDescriptionDao().insert(
+                AbilityDescriptionEntity(name = ability.name, description = description)
+            )
+        }
         return description
     }
 
