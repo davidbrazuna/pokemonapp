@@ -54,14 +54,25 @@ class PokemonRepository @Inject constructor(
         api.getPokemonDetails(name)
     }
 
-    // Cache-first: Room (persists across app restarts) is checked before the
-    // network. A miss fetches the ability's short_effect (English) and writes
-    // it back to Room so the next selection of the same ability — this session
-    // or a future one — is a local read.
-    suspend fun getAbilityDescription(ability: AbilityItem): Result<String> = safeApiCall {
-        database.abilityDescriptionDao().get(ability.name)?.description
-            ?: fetchAndCacheAbilityDescription(ability)
+    // Cache-first: a local read failure (e.g. a corrupt DB) degrades to a
+    // network fetch rather than failing outright — the cache is an optimization,
+    // not something that should surface as "the request failed" on its own. Only
+    // the network fetch is wrapped in safeApiCall, so a Result.failure here
+    // always means the network attempt failed, never an ambiguous local error.
+    suspend fun getAbilityDescription(ability: AbilityItem): Result<String> {
+        val cached = readCachedAbilityDescription(ability.name)
+        if (cached != null) return Result.success(cached)
+        return safeApiCall { fetchAndCacheAbilityDescription(ability) }
     }
+
+    private suspend fun readCachedAbilityDescription(name: String): String? =
+        try {
+            database.abilityDescriptionDao().get(name)?.description
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            null
+        }
 
     private suspend fun fetchAndCacheAbilityDescription(ability: AbilityItem): String {
         val response = api.getAbilityDetail(ability.url)

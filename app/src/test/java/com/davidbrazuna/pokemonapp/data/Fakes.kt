@@ -6,6 +6,7 @@ import com.davidbrazuna.pokemonapp.data.local.PagingMetadataDao
 import com.davidbrazuna.pokemonapp.data.local.PagingMetadataEntity
 import com.davidbrazuna.pokemonapp.data.local.PokemonDao
 import com.davidbrazuna.pokemonapp.data.local.PokemonEntity
+import com.davidbrazuna.pokemonapp.model.AbilityDetailResponse
 import com.davidbrazuna.pokemonapp.model.Pokemon
 import com.davidbrazuna.pokemonapp.model.PokemonDetailResponseData
 import com.davidbrazuna.pokemonapp.model.PokemonList
@@ -30,6 +31,9 @@ class FakePokemonApi : PokemonApi {
     }
 
     override suspend fun getPokemonDetails(name: String): PokemonDetailResponseData =
+        throw NotImplementedError("not used by mediator tests")
+
+    override suspend fun getAbilityDetail(url: String): AbilityDetailResponse =
         throw NotImplementedError("not used by mediator tests")
 }
 

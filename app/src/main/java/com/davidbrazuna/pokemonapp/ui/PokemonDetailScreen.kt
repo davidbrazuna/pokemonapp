@@ -1,6 +1,7 @@
 package com.davidbrazuna.pokemonapp.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -255,7 +257,14 @@ private fun AbilitiesRow(
     modifier: Modifier = Modifier
 ) {
     Row(
-        modifier = modifier.fillMaxWidth(),
+        // A Pokemon can have 2-3 abilities (including a hidden one, which reads
+        // longer with its "(hidden)" suffix); a plain Row neither wraps nor
+        // scrolls, so on narrow screens the trailing chip(s) were clipped at the
+        // edge — not just visually, but untappable, making that ability's
+        // description unreachable.
+        modifier = modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState()),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         abilities.forEachIndexed { index, ability ->
