@@ -2,6 +2,7 @@ package com.davidbrazuna.pokemonapp.ui.components
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -34,11 +35,32 @@ private fun PokemonTopBar(
     )
 }
 
-// List screen: "Pokédex" centered, refresh action on the right.
+// Shared "Up" affordance: with a single-level hierarchy under Home, Up and Back
+// always coincide, so every screen below Home uses the same arrow + callback.
 @Composable
-fun PokemonListTopBar(onRefresh: () -> Unit) {
+private fun BackNavigationIcon(onBack: () -> Unit) {
+    IconButton(onClick = onBack) {
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+            contentDescription = stringResource(R.string.action_back)
+        )
+    }
+}
+
+// Home screen: the app's entry point. No navigation icon — there is nothing
+// "up" from here, so no back/home affordance is shown.
+@Composable
+fun PokemonHomeTopBar() {
+    PokemonTopBar(title = stringResource(R.string.app_bar_home_title))
+}
+
+// List screen: back arrow to Home on the left, "Pokédex" centered, refresh
+// action on the right.
+@Composable
+fun PokemonListTopBar(onBack: () -> Unit, onRefresh: () -> Unit) {
     PokemonTopBar(
         title = stringResource(R.string.app_bar_list_title),
+        navigationIcon = { BackNavigationIcon(onBack) },
         actions = {
             IconButton(onClick = onRefresh) {
                 Icon(
@@ -50,16 +72,30 @@ fun PokemonListTopBar(onRefresh: () -> Unit) {
     )
 }
 
-// Detail screen: back arrow on the left, Pokemon name centered.
+// About screen: back arrow to Home on the left, title centered.
 @Composable
-fun PokemonDetailTopBar(title: String, onBack: () -> Unit) {
+fun PokemonAboutTopBar(onBack: () -> Unit) {
+    PokemonTopBar(
+        title = stringResource(R.string.app_bar_about_title),
+        navigationIcon = { BackNavigationIcon(onBack) }
+    )
+}
+
+// Detail screen: back arrow (Up, to the List) on the left, Pokemon name
+// centered, and a dedicated Home shortcut on the right. This screen sits three
+// levels deep (Home -> List -> Detail), so Up alone would take two taps to
+// reach Home; the extra action is a deliberate escape hatch, not a replacement
+// for Up.
+@Composable
+fun PokemonDetailTopBar(title: String, onBack: () -> Unit, onHome: () -> Unit) {
     PokemonTopBar(
         title = title,
-        navigationIcon = {
-            IconButton(onClick = onBack) {
+        navigationIcon = { BackNavigationIcon(onBack) },
+        actions = {
+            IconButton(onClick = onHome) {
                 Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = stringResource(R.string.action_back)
+                    imageVector = Icons.Filled.Home,
+                    contentDescription = stringResource(R.string.action_home)
                 )
             }
         }

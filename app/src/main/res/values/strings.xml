@@ -10,10 +10,23 @@
     <string name="detail_base_experience_unknown">-</string>
     <string name="detail_abilities_title">Abilities:</string>
 
+    <!-- Home screen -->
+    <string name="app_bar_home_title">@string/app_name</string>
+    <string name="home_card_pokedex_title">Pokédex</string>
+    <string name="home_card_about_title">About</string>
+
+    <!-- About screen -->
+    <string name="app_bar_about_title">About</string>
+    <string name="about_developer">Developer: David Brazuna</string>
+    <string name="about_version">Version %1$s</string>
+    <string name="about_photo_description">Developer photo</string>
+    <string name="about_github_label">github.com/davidbrazuna</string>
+
     <!-- App bars -->
     <string name="app_bar_list_title">Pokédex</string>
     <string name="action_refresh">Refresh</string>
     <string name="action_back">Back</string>
+    <string name="action_home">Home</string>
 
     <!-- Shared -->
     <string name="retry">Retry</string>

@@ -36,6 +36,7 @@ import com.davidbrazuna.pokemonapp.viewmodel.PokemonDetailViewModel
 @Composable
 fun PokemonDetailScreen(
     onBack: () -> Unit,
+    onHome: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: PokemonDetailViewModel = hiltViewModel()
 ) {
@@ -45,6 +46,7 @@ fun PokemonDetailScreen(
         uiState = uiState,
         onRetry = viewModel::retry,
         onBack = onBack,
+        onHome = onHome,
         modifier = modifier
     )
 }
@@ -57,11 +59,12 @@ fun PokemonDetailScreen(
     uiState: DetailUiState,
     onRetry: () -> Unit,
     onBack: () -> Unit,
+    onHome: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Scaffold(
         modifier = modifier,
-        topBar = { PokemonDetailTopBar(title = title, onBack = onBack) }
+        topBar = { PokemonDetailTopBar(title = title, onBack = onBack, onHome = onHome) }
     ) { innerPadding ->
         val contentModifier = Modifier.padding(innerPadding).fillMaxSize()
         when (uiState) {
@@ -154,7 +157,8 @@ private fun PokemonDetailSuccessPreview() {
         title = "Ivysaur",
         uiState = DetailUiState.Success(previewPokemon),
         onRetry = {},
-        onBack = {}
+        onBack = {},
+        onHome = {}
     )
 }
 
@@ -165,7 +169,8 @@ private fun PokemonDetailErrorPreview() {
         title = "Ivysaur",
         uiState = DetailUiState.Error("Unable to resolve host"),
         onRetry = {},
-        onBack = {}
+        onBack = {},
+        onHome = {}
     )
 }
 
@@ -176,6 +181,7 @@ private fun PokemonDetailLoadingPreview() {
         title = "Ivysaur",
         uiState = DetailUiState.Loading,
         onRetry = {},
-        onBack = {}
+        onBack = {},
+        onHome = {}
     )
 }

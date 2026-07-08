@@ -22,9 +22,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.paging.LoadState
+import androidx.paging.PagingData
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
@@ -35,15 +37,39 @@ import com.davidbrazuna.pokemonapp.ui.components.PokemonListTopBar
 import com.davidbrazuna.pokemonapp.ui.components.PokemonSprite
 import com.davidbrazuna.pokemonapp.ui.components.RetryContent
 import com.davidbrazuna.pokemonapp.viewmodel.PokemonListViewModel
+import kotlinx.coroutines.flow.flowOf
 
-@OptIn(ExperimentalMaterial3Api::class)
+// Stateful entry point: binds the ViewModel and delegates to the stateless body,
+// mirroring the split used by PokemonDetailScreen.
 @Composable
 fun PokemonListScreen(
     onPokemonClick: (PokemonWithImage) -> Unit,
+    onBack: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: PokemonListViewModel = hiltViewModel()
 ) {
     val items = viewModel.pokemonPagingFlow.collectAsLazyPagingItems()
+    PokemonListScreen(
+        items = items,
+        onPokemonClick = onPokemonClick,
+        onBack = onBack,
+        modifier = modifier
+    )
+}
+
+// Stateless body: takes the already-collected LazyPagingItems and no ViewModel,
+// so it shows in @Preview by feeding it a fixed PagingData source instead of a
+// real Pager. Loading/error paging states aren't previewable this way (they
+// come from an actual PagingSource's LoadState, not from PagingData.from), so
+// only the loaded/populated case is covered here.
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PokemonListScreen(
+    items: LazyPagingItems<PokemonWithImage>,
+    onPokemonClick: (PokemonWithImage) -> Unit,
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     val refreshState = items.loadState.refresh
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -65,7 +91,7 @@ fun PokemonListScreen(
 
     Scaffold(
         modifier = modifier,
-        topBar = { PokemonListTopBar(onRefresh = items::refresh) },
+        topBar = { PokemonListTopBar(onBack = onBack, onRefresh = items::refresh) },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { innerPadding ->
         val contentModifier = Modifier.padding(innerPadding)
@@ -154,4 +180,20 @@ private fun PokemonRow(
             style = MaterialTheme.typography.titleMedium
         )
     }
+}
+
+// Fabricated PagingData, no ViewModel/network — collectAsLazyPagingItems() on a
+// fixed flow yields a fully loaded, non-refreshing LazyPagingItems, which is
+// enough to preview the populated list.
+private val previewPokemonList = listOf(
+    PokemonWithImage(name = "bulbasaur", imageUrl = null),
+    PokemonWithImage(name = "ivysaur", imageUrl = null),
+    PokemonWithImage(name = "venusaur", imageUrl = null)
+)
+
+@Preview(showBackground = true)
+@Composable
+private fun PokemonListPreview() {
+    val items = flowOf(PagingData.from(previewPokemonList)).collectAsLazyPagingItems()
+    PokemonListScreen(items = items, onPokemonClick = {}, onBack = {})
 }
