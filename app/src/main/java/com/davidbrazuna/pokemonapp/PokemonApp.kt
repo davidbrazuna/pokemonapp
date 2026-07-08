@@ -8,21 +8,29 @@ import coil3.disk.DiskCache
 import coil3.memory.MemoryCache
 import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import coil3.request.crossfade
-import com.davidbrazuna.pokemonapp.retrofit.RetrofitInstance
+import com.davidbrazuna.pokemonapp.data.di.ImageLoaderEntryPoint
+import dagger.hilt.android.HiltAndroidApp
+import dagger.hilt.android.EntryPointAccessors
 import okio.Path.Companion.toOkioPath
 
 // Coil 3 ships no networking by default. Implementing SingletonImageLoader.Factory
 // wires the app-wide ImageLoader once so every AsyncImage can fetch over HTTP,
-// reusing the OkHttpClient already configured in RetrofitInstance (same connection
-// pool, same debug logging).
+// reusing the app-wide OkHttpClient from the Hilt graph (same connection pool,
+// same debug logging as Retrofit). @HiltAndroidApp generates the root component.
+@HiltAndroidApp
 class PokemonApp : Application(), SingletonImageLoader.Factory {
 
-    override fun newImageLoader(context: PlatformContext): ImageLoader =
-        ImageLoader.Builder(context)
+    override fun newImageLoader(context: PlatformContext): ImageLoader {
+        // newImageLoader is not a Hilt injection site, so reach the shared client
+        // through an entry point instead of @Inject.
+        val okHttpClient = EntryPointAccessors
+            .fromApplication(this, ImageLoaderEntryPoint::class.java)
+            .okHttpClient()
+        return ImageLoader.Builder(context)
             .components {
                 add(
                     OkHttpNetworkFetcherFactory(
-                        callFactory = { RetrofitInstance.okHttpClient }
+                        callFactory = { okHttpClient }
                     )
                 )
             }
@@ -43,4 +51,5 @@ class PokemonApp : Application(), SingletonImageLoader.Factory {
             }
             .crossfade(true)
             .build()
+    }
 }

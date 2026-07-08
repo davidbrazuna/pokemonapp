@@ -1,17 +1,16 @@
 package com.davidbrazuna.pokemonapp.viewmodel
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.davidbrazuna.pokemonapp.data.PokemonRepository
-import com.davidbrazuna.pokemonapp.data.local.PokemonDatabase
 import com.davidbrazuna.pokemonapp.model.PokemonDetailResponseData
-import com.davidbrazuna.pokemonapp.retrofit.RetrofitInstance
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 // UI state for the detail screen. Compose collects this as a single source of truth
 // instead of separate LiveData + one-shot error Event.
@@ -23,18 +22,13 @@ sealed interface DetailUiState {
     data class Error(val message: String?) : DetailUiState
 }
 
-class PokemonDetailViewModel(
-    application: Application,
+// Hilt injects the repository and the SavedStateHandle (which carries the nav
+// argument), so this is a plain ViewModel.
+@HiltViewModel
+class PokemonDetailViewModel @Inject constructor(
+    private val repository: PokemonRepository,
     savedStateHandle: SavedStateHandle
-) : AndroidViewModel(application) {
-
-    // Instantiated directly (not via constructor) because the default factory only
-    // auto-injects Application/SavedStateHandle. The database is unused by detail
-    // calls but the repository now requires it. Revisit once Hilt lands.
-    private val repository = PokemonRepository(
-        RetrofitInstance.api,
-        PokemonDatabase.getInstance(application)
-    )
+) : ViewModel() {
 
     // Populated by the type-safe Route.PokemonDetail(name) argument. The NavHost
     // guarantees the argument is present, so this should never throw; kept as a

@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.hilt)
 }
 
 android {
@@ -55,7 +56,7 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation(platform(libs.okhttp.bom))
     implementation(libs.okhttp)
-    // Interceptor is added only when BuildConfig.DEBUG is true (see RetrofitInstance)
+    // Interceptor is added only when BuildConfig.DEBUG is true (see NetworkModule)
     implementation(libs.okhttp.logging.interceptor)
     // Compose — the BOM aligns all Compose artifact versions.
     implementation(platform(libs.androidx.compose.bom))
@@ -84,6 +85,12 @@ dependencies {
     implementation(libs.androidx.room.ktx)
     implementation(libs.androidx.room.paging)
     ksp(libs.androidx.room.compiler)
+
+    // Hilt for DI; the compiler runs through KSP. hilt-navigation-compose wires
+    // hiltViewModel() into the Compose NavHost.
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
+    implementation(libs.androidx.hilt.navigation.compose)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

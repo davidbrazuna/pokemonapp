@@ -1,27 +1,21 @@
 package com.davidbrazuna.pokemonapp.viewmodel
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import com.davidbrazuna.pokemonapp.data.PokemonRepository
-import com.davidbrazuna.pokemonapp.data.local.PokemonDatabase
 import com.davidbrazuna.pokemonapp.model.PokemonWithImage
-import com.davidbrazuna.pokemonapp.retrofit.RetrofitInstance
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
+import javax.inject.Inject
 
-// AndroidViewModel so the repository can be given the Room database, which needs
-// a Context. Built directly (not constructor-injected) because the default
-// factory only auto-injects Application/SavedStateHandle. Revisit once Hilt lands.
-class PokemonListViewModel(
-    application: Application
-) : AndroidViewModel(application) {
-
-    private val repository = PokemonRepository(
-        RetrofitInstance.api,
-        PokemonDatabase.getInstance(application)
-    )
+// Hilt injects the repository, so this is a plain ViewModel — no AndroidViewModel
+// or Context plumbing needed (the database Context is resolved in DatabaseModule).
+@HiltViewModel
+class PokemonListViewModel @Inject constructor(
+    private val repository: PokemonRepository
+) : ViewModel() {
 
     // Paging handles loading/append/error/retry state; the UI collects this flow
     // with collectAsLazyPagingItems(). cachedIn keeps the paged data across

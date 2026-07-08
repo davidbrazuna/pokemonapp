@@ -23,7 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
@@ -41,7 +41,7 @@ import com.davidbrazuna.pokemonapp.viewmodel.PokemonListViewModel
 fun PokemonListScreen(
     onPokemonClick: (PokemonWithImage) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: PokemonListViewModel = viewModel()
+    viewModel: PokemonListViewModel = hiltViewModel()
 ) {
     val items = viewModel.pokemonPagingFlow.collectAsLazyPagingItems()
     val refreshState = items.loadState.refresh

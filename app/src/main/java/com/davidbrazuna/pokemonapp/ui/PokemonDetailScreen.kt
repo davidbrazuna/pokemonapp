@@ -17,7 +17,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.davidbrazuna.pokemonapp.R
 import com.davidbrazuna.pokemonapp.model.Ability
 import com.davidbrazuna.pokemonapp.model.AbilityItem
@@ -37,7 +37,7 @@ import com.davidbrazuna.pokemonapp.viewmodel.PokemonDetailViewModel
 fun PokemonDetailScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: PokemonDetailViewModel = viewModel()
+    viewModel: PokemonDetailViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     PokemonDetailScreen(

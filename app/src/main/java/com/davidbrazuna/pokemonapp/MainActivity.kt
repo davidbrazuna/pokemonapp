@@ -16,7 +16,11 @@ import androidx.navigation.compose.rememberNavController
 import com.davidbrazuna.pokemonapp.ui.PokemonDetailScreen
 import com.davidbrazuna.pokemonapp.ui.PokemonListScreen
 import com.davidbrazuna.pokemonapp.ui.navigation.Route
+import dagger.hilt.android.AndroidEntryPoint
 
+// @AndroidEntryPoint enables Hilt injection for the ViewModels created by the
+// NavHost below (via hiltViewModel()).
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
