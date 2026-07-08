@@ -5,7 +5,9 @@ import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.map
+import com.davidbrazuna.pokemonapp.data.local.AbilityDescriptionEntity
 import com.davidbrazuna.pokemonapp.data.local.PokemonDatabase
+import com.davidbrazuna.pokemonapp.model.AbilityItem
 import com.davidbrazuna.pokemonapp.model.PokemonWithImage
 import com.davidbrazuna.pokemonapp.retrofit.PokemonApi
 import kotlinx.coroutines.CancellationException
@@ -52,6 +54,27 @@ class PokemonRepository @Inject constructor(
         api.getPokemonDetails(name)
     }
 
+    // Cache-first: Room (persists across app restarts) is checked before the
+    // network. A miss fetches the ability's short_effect (English) and writes
+    // it back to Room so the next selection of the same ability — this session
+    // or a future one — is a local read.
+    suspend fun getAbilityDescription(ability: AbilityItem): Result<String> = safeApiCall {
+        database.abilityDescriptionDao().get(ability.name)?.description
+            ?: fetchAndCacheAbilityDescription(ability)
+    }
+
+    private suspend fun fetchAndCacheAbilityDescription(ability: AbilityItem): String {
+        val response = api.getAbilityDetail(ability.url)
+        val description = response.effectEntries
+            .firstOrNull { it.language.name == "en" }
+            ?.shortEffect
+            ?: NO_DESCRIPTION_FALLBACK
+        database.abilityDescriptionDao().insert(
+            AbilityDescriptionEntity(name = ability.name, description = description)
+        )
+        return description
+    }
+
     // Runs [block] and wraps the outcome in Result. CancellationException is
     // rethrown rather than wrapped: leaving a screen mid-request cancels the
     // coroutine, and that cancellation must propagate normally instead of
@@ -67,5 +90,6 @@ class PokemonRepository @Inject constructor(
 
     companion object {
         private const val PAGE_SIZE = 20
+        private const val NO_DESCRIPTION_FALLBACK = "No description available."
     }
 }
