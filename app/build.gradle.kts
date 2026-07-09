@@ -90,6 +90,16 @@ kotlin {
     }
 }
 
+// The Compose compiler plugin's release mapping tasks resolve
+// org.jetbrains.kotlin:compose-group-mapping at the Compose-compiler version,
+// which isn't published for Kotlin 2.3.x — so assembleRelease fails on tasks
+// that only generate a Compose deobfuscation mapping for Play Console stack
+// traces (nothing the APK needs). Disable the whole chain until the artifact
+// ships. See CMP-9459 / KT-83266.
+tasks.matching { it.name.contains("ComposeMapping") }.configureEach {
+    enabled = false
+}
+
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.material)
