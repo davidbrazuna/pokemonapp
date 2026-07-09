@@ -2,6 +2,4 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
-    <!-- Classic "Pokéball red" — used for the launcher icon's line/glyph. -->
-    <color name="red">#EE1515</color>
 </resources>
