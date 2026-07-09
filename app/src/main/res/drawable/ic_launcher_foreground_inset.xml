@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Inset so the glyph sits inside the ~66% "safe zone" adaptive icons need —
+     without it, circular/squircle masks on different launchers could clip
+     the ring's edges. Uses pokemon_121114 (the imported vector, black) so it
+     stays crisp at any density, instead of the raster img.png. -->
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/pokemon_121114"
+    android:insetLeft="18%"
+    android:insetTop="18%"
+    android:insetRight="18%"
+    android:insetBottom="18%" />

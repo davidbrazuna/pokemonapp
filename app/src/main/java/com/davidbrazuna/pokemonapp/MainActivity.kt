@@ -1,7 +1,15 @@
 package com.davidbrazuna.pokemonapp
 
+import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
+import android.animation.ObjectAnimator
+import android.animation.PropertyValuesHolder
+import android.graphics.Color
 import android.os.Bundle
+import android.view.View
+import android.view.animation.AnticipateInterpolator
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -10,6 +18,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -27,8 +36,44 @@ import dagger.hilt.android.AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Must run before super.onCreate() — the platform/compat library reads
+        // the activity's theme (Theme.App.Starting) at that point to decide
+        // what to show. postSplashScreenTheme in that style switches the
+        // activity back to Theme.PokemonApp automatically once this is done.
+        val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        // Force dark (black) status-bar icons regardless of the system light/dark
+        // setting: the app always renders on light surfaces (white background,
+        // light-gray surfaceContainer top bar), so light icons would wash out.
+        // Bare enableEdgeToEdge() uses systemDefault(), whose auto-threshold was
+        // picking light icons here; light() pins them dark. The transparent-scrim
+        // args keep the bars edge-to-edge (no solid color band).
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT),
+            navigationBarStyle = SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)
+        )
+
+        splashScreen.setOnExitAnimationListener { splashScreenView ->
+            // Simple pop: the icon scales up slightly then shrinks to nothing
+            // as it fades, instead of the default abrupt disappearance.
+            // AnticipateInterpolator gives it a small "wind-up" before that
+            // shrink, which reads as more deliberate than a linear scale-down.
+            ObjectAnimator.ofPropertyValuesHolder(
+                splashScreenView.iconView,
+                PropertyValuesHolder.ofFloat(View.SCALE_X, 1f, 1.15f, 0f),
+                PropertyValuesHolder.ofFloat(View.SCALE_Y, 1f, 1.15f, 0f),
+                PropertyValuesHolder.ofFloat(View.ALPHA, 1f, 1f, 0f)
+            ).apply {
+                interpolator = AnticipateInterpolator()
+                duration = EXIT_ANIMATION_DURATION_MS
+                addListener(object : AnimatorListenerAdapter() {
+                    override fun onAnimationEnd(animation: Animator) {
+                        splashScreenView.remove()
+                    }
+                })
+                start()
+            }
+        }
 
         setContent {
             AppTheme {
@@ -39,6 +84,10 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    private companion object {
+        const val EXIT_ANIMATION_DURATION_MS = 400L
     }
 }
 
