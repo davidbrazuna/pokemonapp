@@ -1,9 +1,28 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
     <style name="Base.Theme.PokemonApp" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+        <!-- App always renders on light surfaces, so pin dark status-bar icons
+             here too. enableEdgeToEdge() sets this in code, but the Material
+             DayNight parent otherwise re-derives it from the system theme when
+             it's applied via postSplashScreenTheme after the splash. -->
+        <item name="android:windowLightStatusBar">true</item>
     </style>
 
     <style name="Theme.PokemonApp" parent="Base.Theme.PokemonApp" />
+
+    <!-- Shown while the app cold-starts, before Theme.PokemonApp takes over
+         (postSplashScreenTheme below handles that switch automatically).
+         windowLightStatusBar must be set here directly, not just on
+         Base.Theme.PokemonApp: this theme's parent is Theme.SplashScreen, which
+         never sets it (left to the platform default, which follows system
+         dark/light mode). Without it, a device in system dark mode shows washed-out
+         icons against this theme's white splash background for that first frame,
+         before enableEdgeToEdge() (which only runs once Theme.PokemonApp is
+         already active) has any window to fix. -->
+    <style name="Theme.App.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/white</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground_inset</item>
+        <item name="postSplashScreenTheme">@style/Theme.PokemonApp</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
 </resources>

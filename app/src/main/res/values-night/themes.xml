@@ -1,7 +1,10 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
     <style name="Base.Theme.PokemonApp" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your dark theme here. -->
-        <!-- <item name="colorPrimary">@color/my_dark_primary</item> -->
+        <!-- The app renders on light surfaces even under system dark mode, so
+             status-bar icons must stay dark here too — this night variant would
+             otherwise override the day theme's windowLightStatusBar back to
+             false and wash the icons out again. -->
+        <item name="android:windowLightStatusBar">true</item>
     </style>
 </resources>

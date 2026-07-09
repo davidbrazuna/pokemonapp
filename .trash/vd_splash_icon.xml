@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Stroke-based approximation of the app glyph: a ring with a gap (traced,
+     not filled), plus a small center dot — built specifically so trimPathEnd
+     can "draw" the ring progressively. The original pokemon_121114.xml can't
+     do this (fillColor path, not a stroke), so this is a separate, simplified
+     asset used only for the splash animation. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:name="ring"
+        android:pathData="M12,4 A8,8 0 1,1 5.1,16"
+        android:strokeColor="#000000"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:trimPathStart="0"
+        android:trimPathEnd="0" />
+    <path
+        android:name="dot"
+        android:pathData="M12,10.5 A1.5,1.5 0 1,1 12,13.5 A1.5,1.5 0 1,1 12,10.5 Z"
+        android:fillColor="#000000"
+        android:fillAlpha="0" />
+</vector>

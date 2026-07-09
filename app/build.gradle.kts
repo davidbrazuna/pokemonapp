@@ -1,26 +1,71 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.jetbrains.kotlin.android)
-    id("org.jetbrains.kotlin.kapt")
+    alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.hilt)
+}
+
+// Loaded from keystore.properties (gitignored, see keystore.properties.example)
+// rather than hardcoded, so signing credentials never enter version control.
+// Absent entirely on a fresh clone or CI without it — assembleDebug still
+// works either way; only a signed assembleRelease needs this to be present.
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+val keystoreProperties = Properties().apply {
+    if (keystorePropertiesFile.exists()) {
+        keystorePropertiesFile.inputStream().use { load(it) }
+    } else {
+        logger.warn(
+            "keystore.properties not found — assembleRelease will produce an " +
+                "UNSIGNED APK/AAB, not an installable release build. See " +
+                "keystore.properties.example."
+        )
+    }
 }
 
 android {
-    namespace = "com.example.pokemonapp"
-    compileSdk = 34
+    namespace = "com.davidbrazuna.pokemonapp"
+    compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.example.pokemonapp"
-        minSdk = 24
-        targetSdk = 34
+        applicationId = "com.davidbrazuna.pokemonapp"
+        minSdk = 28
+        targetSdk = 36
         versionCode = 1
-        versionName = "1.0"
+        versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        create("release") {
+            if (keystorePropertiesFile.exists()) {
+                fun requiredProperty(key: String): String =
+                    keystoreProperties.getProperty(key)
+                        ?: throw GradleException(
+                            "keystore.properties is missing '$key' — check it against " +
+                                "keystore.properties.example."
+                        )
+                storeFile = file(requiredProperty("storeFile"))
+                storePassword = requiredProperty("storePassword")
+                keyAlias = requiredProperty("keyAlias")
+                keyPassword = requiredProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            isMinifyEnabled = false
+            // Safe now that Gson (reflection-based, needed hand-written keep
+            // rules) is gone — Room, Hilt, Retrofit/OkHttp, Coil, Paging, and
+            // kotlinx.serialization all ship their own consumer R8 rules.
+            isMinifyEnabled = true
+            isShrinkResources = true
+            if (keystorePropertiesFile.exists()) {
+                signingConfig = signingConfigs.getByName("release")
+            }
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -28,58 +73,84 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
-    }
-    kotlinOptions {
-        jvmTarget = "1.8"
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
-    buildFeatures{
-        viewBinding = true
+    buildFeatures {
+        // No View-based screens remain — the app is Compose end to end.
+        buildConfig = true
+        compose = true
     }
 }
 
+kotlin {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+    }
+}
+
+// The Compose compiler plugin's release mapping tasks resolve
+// org.jetbrains.kotlin:compose-group-mapping at the Compose-compiler version,
+// which isn't published for Kotlin 2.3.x — so assembleRelease fails on tasks
+// that only generate a Compose deobfuscation mapping for Play Console stack
+// traces (nothing the APK needs). Disable the whole chain until the artifact
+// ships. See CMP-9459 / KT-83266.
+tasks.matching { it.name.contains("ComposeMapping") }.configureEach {
+    enabled = false
+}
+
 dependencies {
-
-    val nav_version = "2.7.7"
-    val lifecycle_version = "2.4.0"
-
     implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.appcompat)
     implementation(libs.material)
-    implementation(libs.androidx.activity)
-    implementation(libs.androidx.constraintlayout)
+    implementation(libs.androidx.lifecycle.viewmodel.ktx)
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.converter.kotlinx.serialization)
+    implementation(libs.kotlinx.serialization.json)
+    implementation(platform(libs.okhttp.bom))
+    implementation(libs.okhttp)
+    // Interceptor is added only when BuildConfig.DEBUG is true (see NetworkModule)
+    implementation(libs.okhttp.logging.interceptor)
+    // Compose — the BOM aligns all Compose artifact versions.
+    implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.compose.ui)
+    implementation(libs.androidx.compose.ui.tooling.preview)
+    implementation(libs.androidx.compose.foundation)
+    implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.compose.material.icons.core)
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.androidx.navigation.compose)
+    debugImplementation(libs.androidx.compose.ui.tooling)
+
+    // Paging 3 for the list (runtime + Compose integration).
+    implementation(libs.androidx.paging.runtime)
+    implementation(libs.androidx.paging.compose)
+
+    // Coil 3 for image loading in Compose; coil-network-okhttp reuses our OkHttp.
+    implementation(libs.coil.compose)
+    implementation(libs.coil.network.okhttp)
+
+    // Room for offline caching. room-paging bridges Room's generated PagingSource
+    // to Paging 3; room-compiler runs through KSP (no kapt in this project).
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    implementation(libs.androidx.room.paging)
+    ksp(libs.androidx.room.compiler)
+
+    // Hilt for DI; the compiler runs through KSP. hilt-navigation-compose wires
+    // hiltViewModel() into the Compose NavHost.
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
+    implementation(libs.androidx.hilt.navigation.compose)
+
+    // Splash screen: compat shim so the same behavior (icon + exit animation)
+    // works below API 31 too, since minSdk is 28.
+    implementation(libs.androidx.core.splashscreen)
+
     testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
-
-// navigation component
-    implementation("androidx.navigation:navigation-fragment-ktx:$nav_version")
-    implementation("androidx.navigation:navigation-ui-ktx:$nav_version")
-
-//intuit
-    implementation("com.intuit.sdp:sdp-android:1.0.6")
-    implementation("com.intuit.ssp:ssp-android:1.0.6")
-
-//gif
-    implementation("pl.droidsonroids.gif:android-gif-drawable:1.2.17")
-
-//retrofit
-    implementation("com.squareup.retrofit2:retrofit:2.9.0")
-    implementation("com.squareup.retrofit2:converter-gson:2.3.0")
-
-//glide
-    implementation("com.github.bumptech.glide:glide:4.12.0")
-
-//viewmodel
-    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycle_version")
-    implementation("androidx.lifecycle:lifecycle-livedata-ktx:$lifecycle_version")
-
-//Room
-    val room_version = "2.6.1"
-
-    implementation("androidx.room:room-runtime:$room_version")
-   // kapt("androidx.room:room-compiler:$room_version")
-    implementation("androidx.room:room-ktx:$room_version")
 }
