@@ -16,6 +16,12 @@ val keystorePropertiesFile = rootProject.file("keystore.properties")
 val keystoreProperties = Properties().apply {
     if (keystorePropertiesFile.exists()) {
         keystorePropertiesFile.inputStream().use { load(it) }
+    } else {
+        logger.warn(
+            "keystore.properties not found — assembleRelease will produce an " +
+                "UNSIGNED APK/AAB, not an installable release build. See " +
+                "keystore.properties.example."
+        )
     }
 }
 
@@ -36,10 +42,16 @@ android {
     signingConfigs {
         create("release") {
             if (keystorePropertiesFile.exists()) {
-                storeFile = file(keystoreProperties["storeFile"] as String)
-                storePassword = keystoreProperties["storePassword"] as String
-                keyAlias = keystoreProperties["keyAlias"] as String
-                keyPassword = keystoreProperties["keyPassword"] as String
+                fun requiredProperty(key: String): String =
+                    keystoreProperties.getProperty(key)
+                        ?: throw GradleException(
+                            "keystore.properties is missing '$key' — check it against " +
+                                "keystore.properties.example."
+                        )
+                storeFile = file(requiredProperty("storeFile"))
+                storePassword = requiredProperty("storePassword")
+                keyAlias = requiredProperty("keyAlias")
+                keyPassword = requiredProperty("keyPassword")
             }
         }
     }
